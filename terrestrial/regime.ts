@@ -27,7 +27,7 @@ export function daysBetween(today: string, target: string): number {
 
 /**
  * Forecast when the target is today or up to `horizonDays` ahead.
- * Anything else, including the past, is the monthly typical weather.
+ * A past day is the recorded weather. Further ahead is the past pattern for that date.
  */
 export function regimeForDate(
   targetDate: string,
@@ -38,6 +38,7 @@ export function regimeForDate(
     throw new Error("Invalid date");
   }
   const delta = daysBetween(today, targetDate);
-  if (delta >= 0 && delta <= horizonDays) return "forecast";
+  if (delta < 0) return "history";
+  if (delta <= horizonDays) return "forecast";
   return "typical-for-this-date";
 }

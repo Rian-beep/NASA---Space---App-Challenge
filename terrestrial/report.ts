@@ -1,9 +1,12 @@
+import { archiveUrl, historySentence, parseArchiveDay, parsePowerDay, powerDailyCovers, powerDailyUrl } from "./archive";
+import { DATE_CLIMATE_SOURCE, dateClimateSentence, dateClimateUrl, normalFor, rainRiskFromDateNormal } from "./climate";
+import { kpSpaceWeather } from "./kp";
 import { meteomaticsAuthorization, meteomaticsUrl, parseMeteomaticsDay, parseMeteomaticsHours } from "./meteomatics";
 import { moonAtStation } from "./moon";
 import { parseOpenMeteoDay } from "./openMeteo";
 import { parsePowerMonth } from "./power";
 import { rainRiskFromForecast, rainRiskFromTypical, weatherSentence, groundStorm, hourSentence } from "./rain";
-import { isIsoDate, regimeForDate } from "./regime";
+import { daysBetween, isIsoDate, regimeForDate } from "./regime";
 import { STATIONS } from "./stations";
 import { parseSwpcForecast } from "./swpc";
 import {
@@ -13,6 +16,7 @@ import {
   type Station,
   type StationWeather,
   type HourWeather,
+  type RainRisk,
   type WeatherRegime,
 } from "./types";
 
@@ -105,11 +109,13 @@ function toWeather(
   sourceUrl: string,
   values: DayValues,
   hours: HourWeather[] = [],
+  told?: { rainRisk: RainRisk; sentence: string },
 ): StationWeather {
   const rainRisk =
-    regime === "forecast"
+    told?.rainRisk ??
+    (regime === "history" || regime === "forecast"
       ? rainRiskFromForecast(values)
-      : rainRiskFromTypical(values.precipitationMm);
+      : rainRiskFromTypical(values.precipitationMm));
   return {
     stationId: station.id,
     date,
@@ -122,17 +128,41 @@ function toWeather(
     windSpeedMs: values.windSpeedMs,
     temperatureC: values.temperatureC,
     rainRisk,
-    sentence: weatherSentence({
-      name: station.name,
-      regime,
-      rainRisk,
-      precipitationMm: values.precipitationMm,
-      precipitationChancePercent: values.precipitationChancePercent,
-      cloudCoverPercent: values.cloudCoverPercent,
-      windSpeedMs: values.windSpeedMs,
-    }),
+    sentence:
+      told?.sentence ??
+      weatherSentence({
+        name: station.name,
+        regime,
+        rainRisk,
+        precipitationMm: values.precipitationMm,
+        precipitationChancePercent: values.precipitationChancePercent,
+        cloudCoverPercent: values.cloudCoverPercent,
+        windSpeedMs: values.windSpeedMs,
+      }),
     hours,
   };
+}
+
+function dateClimateWeather(station: Station, date: string): StationWeather | null {
+  const normal = normalFor(station.id, date);
+  if (!normal) return null;
+  const rainRisk = rainRiskFromDateNormal(normal);
+  return toWeather(
+    station,
+    date,
+    "typical-for-this-date",
+    DATE_CLIMATE_SOURCE,
+    dateClimateUrl(),
+    {
+      precipitationMm: normal.precipitationMm,
+      precipitationChancePercent: null,
+      cloudCoverPercent: normal.cloudCoverPercent,
+      windSpeedMs: normal.windSpeedMs,
+      temperatureC: normal.temperatureC,
+    },
+    [],
+    { rainRisk, sentence: dateClimateSentence(station.name, date, normal, rainRisk) },
+  );
 }
 
 async function powerWeather(
@@ -199,6 +229,44 @@ async function meteomaticsWeather(
   }
 }
 
+async function recordedWeather(
+  station: Station,
+  date: string,
+  fetchFn: typeof fetch,
+): Promise<StationWeather> {
+  if (powerDailyCovers(date)) {
+    const url = powerDailyUrl(station, date);
+    try {
+      const values = parsePowerDay(await fetchJson(fetchFn, url), date);
+      if (!blank(values)) {
+        const rainRisk = rainRiskFromForecast(values);
+        return toWeather(station, date, "history", "NASA POWER daily", url, values, [], {
+          rainRisk,
+          sentence: historySentence({ name: station.name, rainRisk, ...values }),
+        });
+      }
+    } catch {
+      // The NASA daily record did not answer. Try the longer archive.
+    }
+  }
+
+  const url = archiveUrl(station, date);
+  try {
+    const values = parseArchiveDay(await fetchJson(fetchFn, url), date);
+    if (!blank(values)) {
+      const rainRisk = rainRiskFromForecast(values);
+      return toWeather(station, date, "history", "Open-Meteo archive", url, values, [], {
+        rainRisk,
+        sentence: historySentence({ name: station.name, rainRisk, ...values }),
+      });
+    }
+  } catch {
+    // No recorded day. Fall through to the past pattern for this date.
+  }
+
+  return dateClimateWeather(station, date) ?? powerWeather(station, date, fetchFn);
+}
+
 async function stationWeather(
   station: Station,
   date: string,
@@ -206,11 +274,12 @@ async function stationWeather(
   fetchFn: typeof fetch,
   login: MeteomaticsLogin | null,
 ): Promise<StationWeather> {
-  if (login) {
-    const direct = await meteomaticsWeather(station, date, fetchFn, login);
-    if (direct) return direct;
-  }
+  if (regime === "history") return recordedWeather(station, date, fetchFn);
   if (regime === "forecast") {
+    if (login) {
+      const direct = await meteomaticsWeather(station, date, fetchFn, login);
+      if (direct) return direct;
+    }
     const url = openMeteoUrl(station);
     try {
       const payload = await fetchJson(fetchFn, url);
@@ -219,13 +288,14 @@ async function stationWeather(
         return toWeather(station, date, "forecast", "Open-Meteo forecast", url, day);
       }
     } catch {
-      // The published forecast did not answer. Fall through to the monthly typical.
+      // The published forecast did not answer. Fall through to the date pattern.
     }
   }
-  return powerWeather(station, date, fetchFn);
+  return dateClimateWeather(station, date) ?? powerWeather(station, date, fetchFn);
 }
 
-async function spaceWeather(date: string, fetchFn: typeof fetch): Promise<SpaceWeather> {
+async function spaceWeather(date: string, today: string, fetchFn: typeof fetch): Promise<SpaceWeather> {
+  if (daysBetween(today, date) < 0) return kpSpaceWeather(date);
   try {
     const payload = await fetchJson(fetchFn, SWPC_URL);
     return parseSwpcForecast(payload, date);
@@ -282,7 +352,7 @@ export async function buildEarthReport(input: {
   const regime = regimeForDate(date, today);
   const [weather, space] = await Promise.all([
     Promise.all(STATIONS.map((station) => stationWeather(station, date, regime, fetchFn, login))),
-    spaceWeather(date, fetchFn),
+    spaceWeather(date, today, fetchFn),
   ]);
   const moonTime = `${date}T12:00:00.000Z`;
   const report: EarthDayReport = {

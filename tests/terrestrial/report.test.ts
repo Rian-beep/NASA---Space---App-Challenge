@@ -13,29 +13,6 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function monthTable(month: string, value: number): Record<string, number> {
-  const keys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  return Object.fromEntries(keys.map((key) => [key, key === month ? value : -999]));
-}
-
-function powerPayload(month: string, values: {
-  precipitationMm: number;
-  temperatureC: number;
-  windSpeedMs: number;
-  cloudCoverPercent: number;
-}): unknown {
-  return {
-    properties: {
-      parameter: {
-        PRECTOTCORR: monthTable(month, values.precipitationMm),
-        T2M: monthTable(month, values.temperatureC),
-        WS10M: monthTable(month, values.windSpeedMs),
-        CLOUD_AMT: monthTable(month, values.cloudCoverPercent),
-      },
-    },
-  };
-}
-
 function forecastPayload(date: string): unknown {
   return {
     daily: {
@@ -62,14 +39,6 @@ function openMeteoUrl(latitude: number, longitude: number): string {
     `?latitude=${latitude}&longitude=${longitude}` +
     "&daily=precipitation_sum,precipitation_probability_max,cloud_cover_mean,wind_speed_10m_max,temperature_2m_mean" +
     "&timezone=UTC&forecast_days=16&wind_speed_unit=kmh"
-  );
-}
-
-function powerUrl(latitude: number, longitude: number): string {
-  return (
-    "https://power.larc.nasa.gov/api/temporal/climatology/point" +
-    "?parameters=PRECTOTCORR,T2M,WS10M,CLOUD_AMT&community=RE" +
-    `&longitude=${longitude}&latitude=${latitude}&format=JSON`
   );
 }
 
@@ -124,22 +93,10 @@ describe("buildEarthReport", () => {
     }
   });
 
-  it("falls back to POWER when Open-Meteo returns an empty daily object, even if SWPC fails", async () => {
-    const urls: string[] = [];
+  it("uses the date pattern when the forecast is empty, even if the storm forecast fails", async () => {
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
-      urls.push(url);
       if (url.includes("api.open-meteo.com")) return jsonResponse({ daily: {} });
-      if (url.includes("power.larc.nasa.gov")) {
-        return jsonResponse(
-          powerPayload("NOV", {
-            precipitationMm: 2.5,
-            temperatureC: 7,
-            windSpeedMs: 13,
-            cloudCoverPercent: 80,
-          }),
-        );
-      }
       if (url.includes("services.swpc.noaa.gov")) throw new Error("swpc down");
       throw new Error(`unexpected ${url}`);
     };
@@ -152,62 +109,87 @@ describe("buildEarthReport", () => {
     });
 
     expect(report.weather).toHaveLength(3);
-    expect(report.moon).toHaveLength(3);
-    expect(urls.filter((url) => url.includes("power.larc.nasa.gov"))).toHaveLength(3);
     for (const station of STATIONS) {
       const row = report.weather.find((item) => item.stationId === station.id);
       expect(row?.regime).toBe("typical-for-this-date");
-      expect(row?.sourceName).toBe("NASA POWER");
-      expect(row?.sourceUrl).toBe(powerUrl(station.latitudeDeg, station.eastLongitudeDeg));
-      expect(row?.precipitationMm).toBe(2.5);
-      expect(row?.precipitationChancePercent).toBeNull();
-      expect(row?.windSpeedMs).toBe(13);
-      expect(row?.temperatureC).toBe(7);
-      expect(row?.cloudCoverPercent).toBe(80);
-      expect(row?.rainRisk).toBe("elevated");
-      expect(row?.sentence).toContain("Typical for this month");
+      expect(row?.sourceName).toBe("NASA POWER date climate");
+      expect(row?.sentence).toContain("Usual for 10 November");
+      expect(row?.sentence).toContain("not a promise for one future day");
       expect(row?.sentence.toLowerCase()).not.toContain("will rain");
-      expect(row?.sentence).toContain("a gust can push the dish off the Moon");
     }
     expect(report.space.available).toBe(false);
-    expect(report.space.maxKp).toBeNull();
     expect(report.space.sentence).toBe(
       "No published solar-storm forecast reaches this date. Storms are only forecast a few days ahead.",
     );
   });
 
-  it("asks NASA POWER for a day outside the injected window and does not call Open-Meteo", async () => {
+  it("uses the past pattern for a far date and does not call the forecast", async () => {
     const urls: string[] = [];
     const fetchImpl: typeof fetch = async (input) => {
       const url = String(input);
       urls.push(url);
-      if (url.includes("api.open-meteo.com")) throw new Error("forecast was not the regime");
-      if (url.includes("power.larc.nasa.gov")) {
-        return jsonResponse(
-          powerPayload("OCT", {
-            precipitationMm: 0.2,
-            temperatureC: 16,
-            windSpeedMs: 3,
-            cloudCoverPercent: 20,
-          }),
-        );
-      }
       if (url.includes("services.swpc.noaa.gov")) return jsonResponse([]);
       throw new Error(`unexpected ${url}`);
     };
 
     const report = await buildEarthReport({
-      date: "2026-10-20",
+      date: "2027-07-20",
       today: TODAY,
       fetchImpl,
       credentials: null,
     });
 
-    expect(urls.some((url) => url.includes("api.open-meteo.com"))).toBe(false);
-    expect(report.weather.every((row) => row.regime === "typical-for-this-date")).toBe(true);
-    expect(report.weather.every((row) => row.precipitationMm === 0.2)).toBe(true);
-    expect(report.weather.every((row) => row.rainRisk === "low")).toBe(true);
+    expect(urls.some((url) => url.includes("api.open-meteo.com") || url.includes("power.larc.nasa.gov"))).toBe(false);
+    const goldstone = report.weather.find((row) => row.stationId === "goldstone");
+    expect(goldstone?.regime).toBe("typical-for-this-date");
+    expect(goldstone?.sourceName).toBe("NASA POWER date climate");
+    expect(goldstone?.temperatureC).toBe(30);
+    expect(goldstone?.rainRisk).toBe("low");
+    expect(goldstone?.sentence).toContain("Usual for 20 July");
+    expect(goldstone?.sentence).toContain("wet in 3 of those years");
     expect(report.space.available).toBe(false);
+  });
+
+  it("reads the recorded archive day and the stored Kp for Apollo 11", async () => {
+    const urls: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      urls.push(url);
+      if (url.includes("archive-api.open-meteo.com")) {
+        return jsonResponse({
+          daily: {
+            time: ["1969-07-20"],
+            temperature_2m_mean: [30.7],
+            precipitation_sum: [0],
+            wind_speed_10m_max: [4.22],
+            cloud_cover_mean: [28],
+          },
+        });
+      }
+      throw new Error(`unexpected ${url}`);
+    };
+
+    const report = await buildEarthReport({
+      date: "1969-07-20",
+      today: TODAY,
+      fetchImpl,
+      credentials: null,
+    });
+
+    expect(urls.every((url) => url.includes("archive-api.open-meteo.com"))).toBe(true);
+    expect(urls).toHaveLength(3);
+    const goldstone = report.weather.find((row) => row.stationId === "goldstone");
+    expect(goldstone?.regime).toBe("history");
+    expect(goldstone?.sourceName).toBe("Open-Meteo archive");
+    expect(goldstone?.temperatureC).toBe(30.7);
+    expect(goldstone?.windSpeedMs).toBe(4.22);
+    expect(goldstone?.rainRisk).toBe("low");
+    expect(goldstone?.sentence).toContain("Recorded on this day");
+    expect(goldstone?.sentence.toLowerCase()).not.toContain("will rain");
+    expect(report.space.sourceName).toBe("GFZ Kp index");
+    expect(report.space.maxKp).toBeCloseTo(1.333, 3);
+    expect(report.space.storm).toBe(false);
+    expect(report.space.sentence).toContain("does not say the call failed");
   });
 
   it("rejects a date that is not a real day before any request", async () => {

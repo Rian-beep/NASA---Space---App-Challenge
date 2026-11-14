@@ -18,8 +18,9 @@ The "predictive model" is a rule on top of published data. It is not a trained n
 
 | How far ahead | What we use | What we call it |
 | --- | --- | --- |
-| The selected day is today, or within the next 16 days, and the forecast request works | Open-Meteo daily forecast (a published weather model, GFS/ECMWF class) | Forecast |
-| The day is further ahead, in the past outside the forecast, or the forecast request fails | NASA POWER monthly typical weather for that place | Typical for this month |
+| The selected day is today, or within the next 16 days, and the forecast request works | Meteomatics when a login is set, otherwise Open-Meteo daily forecast | Forecast |
+| The day is in the past | NASA POWER daily from 1981, otherwise the Open-Meteo archive back to the 1940s | Recorded on this day |
+| The day is further ahead, or the forecast request fails | Mean of NASA POWER daily values on that month and day at that dish, 1991–2020. Wet years had at least 1 mm. Monthly POWER is only the fallback if that day is missing. | Usual for this date |
 
 Rules live in code and tests. Thresholds are our planning labels, not a radio link budget.
 

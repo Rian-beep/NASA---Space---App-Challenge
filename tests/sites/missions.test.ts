@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MISSIONS, missionById, outcomePhrase } from "@/lib/sites/missions";
+import { MISSIONS, landedMissions, missionById, outcomePhrase } from "@/lib/sites/missions";
 import { latLonToVector, vectorToLatLon } from "@/components/globe/geo";
 
 describe("mission catalog", () => {
@@ -28,6 +28,16 @@ describe("mission catalog", () => {
     expect(change6?.eastLongitudeDeg).toBeCloseTo(-153.9852, 4);
     expect(change6?.latitudeDeg).toBeCloseTo(-41.6385, 4);
     expect(chandrayaan3).toMatchObject({ latitudeDeg: -69.3741, eastLongitudeDeg: 32.32 });
+  });
+
+  it("lists landed missions oldest first and leaves impacts out", () => {
+    const landed = landedMissions();
+    expect(landed[0]?.name).toBe("Luna 9");
+    expect(landed.some((mission) => mission.name === "Apollo 11")).toBe(true);
+    expect(landed.some((mission) => mission.outcome === "impact")).toBe(false);
+    expect(landed.map((mission) => mission.dateUtc).join()).toBe(
+      [...landed].sort((a, b) => a.dateUtc.localeCompare(b.dateUtc)).map((mission) => mission.dateUtc).join(),
+    );
   });
 
   it("counts six crewed Apollo landings and leaves unknown sites out", () => {

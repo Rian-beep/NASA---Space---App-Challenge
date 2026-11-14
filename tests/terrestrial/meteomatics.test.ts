@@ -3,7 +3,7 @@ import { STATIONS } from "../../terrestrial/stations";
 import { meteomaticsAuthorization, meteomaticsUrl, parseMeteomaticsDay } from "../../terrestrial/meteomatics";
 import { buildEarthReport } from "../../terrestrial/report";
 
-const DATE = "2026-12-05";
+const DATE = "2026-11-20";
 const LOGIN = { username: "dish-user", password: "dish-pass" };
 
 function series(parameter: string, values: Array<number | null>): unknown {
@@ -126,6 +126,7 @@ describe("Meteomatics above the dishes", () => {
       fetchImpl,
       credentials: LOGIN,
     });
-    expect(report.weather.every((row) => row.sourceName === "NASA POWER")).toBe(true);
+    expect(report.weather.every((row) => row.sourceName === "NASA POWER date climate")).toBe(true);
+    expect(report.weather.every((row) => row.sentence.includes("not a promise for one future day"))).toBe(true);
   });
 });

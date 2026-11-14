@@ -31,6 +31,13 @@ export function missionById(id: string): MissionSite | undefined {
   return byId.get(id);
 }
 
+/** Landings and rovers, oldest first. Impacts stay in the catalog and off this list. */
+export function landedMissions(): MissionSite[] {
+  return MISSIONS.filter((mission) => mission.outcome !== "impact").sort(
+    (a, b) => a.dateUtc.localeCompare(b.dateUtc) || a.name.localeCompare(b.name),
+  );
+}
+
 export function isImpact(outcome: MissionOutcome): boolean {
   return outcome === "impact";
 }
