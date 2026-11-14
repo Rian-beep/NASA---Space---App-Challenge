@@ -7,6 +7,36 @@ export interface LunarPlace {
   eastLongitudeDeg: number;
 }
 
+export function landingPlace(landing: {
+  id: string;
+  name: string;
+  latitudeDeg: number;
+  eastLongitudeDeg: number;
+}): LunarPlace {
+  return {
+    id: landing.id,
+    name: landing.name,
+    latitudeDeg: landing.latitudeDeg,
+    eastLongitudeDeg: landing.eastLongitudeDeg,
+  };
+}
+
+/** Practice spots, then each past landing at its own coordinates. */
+export function placesOnTheMoon(
+  landings: readonly {
+    id: string;
+    name: string;
+    latitudeDeg: number;
+    eastLongitudeDeg: number;
+  }[],
+): LunarPlace[] {
+  const practice = new Set(LUNAR_PLACES.map((place) => place.id));
+  return [
+    ...LUNAR_PLACES,
+    ...landings.filter((landing) => !practice.has(landing.id)).map(landingPlace),
+  ];
+}
+
 export const LUNAR_PLACES: readonly LunarPlace[] = [
   {
     id: "near-side",
