@@ -3,7 +3,7 @@
 import { Html, OrbitControls, Stars } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, type ThreeEvent } from "@react-three/fiber";
 import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Group, PerspectiveCamera, SRGBColorSpace, TextureLoader, Vector3 } from "three";
+import { Group, MeshBasicMaterial, PerspectiveCamera, SRGBColorSpace, TextureLoader, Vector3 } from "three";
 import { latLonToVector } from "../globe/geo";
 
 export type EarthStationPin = {
@@ -111,15 +111,40 @@ function EarthBody() {
 }
 
 function SatelliteSkin({ url }: { url: string }) {
-  const map = useLoader(TextureLoader, url);
+  const satellite = useLoader(TextureLoader, url);
+  const base = useLoader(TextureLoader, "/earth/blue-marble.jpg");
   useEffect(() => {
-    map.colorSpace = SRGBColorSpace;
-    map.anisotropy = 8;
-  }, [map]);
+    satellite.colorSpace = SRGBColorSpace;
+    base.colorSpace = SRGBColorSpace;
+    satellite.anisotropy = 8;
+    base.anisotropy = 8;
+  }, [satellite, base]);
+  const material = useMemo(() => {
+    const mat = new MeshBasicMaterial({ map: base, toneMapped: false });
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.satMap = { value: satellite };
+      shader.fragmentShader = shader.fragmentShader
+        .replace("#include <common>", "#include <common>\nuniform sampler2D satMap;")
+        .replace(
+          "#include <map_fragment>",
+          `
+          #ifdef USE_MAP
+            vec4 baseTexel = texture2D(map, vMapUv);
+            vec4 satTexel = texture2D(satMap, vMapUv);
+            float lum = dot(satTexel.rgb, vec3(0.2126, 0.7152, 0.0722));
+            float live = smoothstep(0.001, 0.012, lum);
+            diffuseColor *= mix(baseTexel, satTexel, live);
+          #endif
+          `,
+        );
+    };
+    mat.customProgramCacheKey = () => "earth-live-satellite";
+    return mat;
+  }, [base, satellite]);
+
   return (
-    <mesh rotation={[0, PRIME_MERIDIAN_YAW, 0]} raycast={() => undefined}>
+    <mesh rotation={[0, PRIME_MERIDIAN_YAW, 0]} raycast={() => undefined} material={material}>
       <sphereGeometry args={[1.004, 128, 96]} />
-      <meshBasicMaterial map={map} toneMapped={false} />
     </mesh>
   );
 }

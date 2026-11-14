@@ -226,7 +226,11 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
         ) : null}
 
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
-          <p>NASA Blue Marble, and a NASA VIIRS satellite picture when one exists for that day.</p>
+          <p>
+            NASA Blue Marble covers the whole globe. On a day that already happened, the sunlit part is a NASA
+            VIIRS satellite picture from that day. The satellite does not photograph the whole Earth at once, so
+            the rest stays Blue Marble.
+          </p>
           <p>
             {sourceLine(report)} A future date beyond the forecast uses NASA daily records for that month and day,
             1991–2020. A past day uses the recorded weather. Kp on a past day is from GFZ. Recent solar storms are
