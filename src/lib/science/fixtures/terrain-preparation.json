@@ -1,0 +1,61 @@
+{
+  "datasetId": "PGDA-90-LDEM_80S_80MPP_ADJ-south-pole-window",
+  "productUrl": "https://pgda.gsfc.nasa.gov/products/90",
+  "citation": "Barker, M. K., et al. (2023), A New View of the Lunar South Pole from the Lunar Orbiter Laser Altimeter, The Planetary Science Journal, https://doi.org/10.3847/PSJ/acf3e1. LOLA DEM LDEM_80S_80MPP_ADJ, NASA GSFC PGDA product 90, https://pgda.gsfc.nasa.gov/products/90.",
+  "coordinateReference": "MOON_ME / DE421 sphere, radius 1737400 m, south-polar stereographic metres. +X toward east longitude 90\u00b0, +Y toward east longitude 0\u00b0. Row 0 is the maximum-Y side. originX and originY are the centre of pixel (0,0).",
+  "bodyRadiusM": 1737400.0,
+  "sourcePixelSpacingM": 80.0,
+  "analysisResolutionM": 80.0,
+  "rows": 432,
+  "cols": 432,
+  "originX": -14840.0,
+  "originY": 16840.0,
+  "pixelSizeM": 80.0,
+  "retrievedAtUtc": "2026-11-14T10:10:17Z",
+  "horizonSearchRadiusM": 12000.0,
+  "preparationNote": "Windowed read with rasterio and GDAL /vsicurl/ from the cloud-optimized GeoTIFF. Analysis heights are the native 80 m postings, rounded to 0.01 m, with no spatial resampling. The display hillshade is a separate 2x2 block mean and is not this grid. Horizon search radius is 12000 m; the window keeps that radius inside the grid for every example site.",
+  "sourceFileUrl": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF",
+  "sourceSizePx": [
+    7600,
+    7600
+  ],
+  "nodataPolicy": "Source nodata is NaN. This window has no nodata. Missing mask azimuths are never filled as flat.",
+  "crsWkt": "PROJCS[\"Moon (2015) - Sphere / Ocentric / South Polar\",GEOGCS[\"Moon (2015) - Sphere / Ocentric\",DATUM[\"Moon (2015) - Sphere\",SPHEROID[\"Moon (2015) - Sphere\",1737400,0,AUTHORITY[\"IAU\",\"30100\"]],AUTHORITY[\"IAU\",\"30100\"]],PRIMEM[\"Reference Meridian\",0,AUTHORITY[\"IAU\",\"30100\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"IAU\",\"30100\"]],PROJECTION[\"Polar_Stereographic\"],PARAMETER[\"latitude_of_origin\",-90],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",NORTH],AXIS[\"Northing\",NORTH],AUTHORITY[\"IAU\",\"30135\"]]",
+  "sites": [
+    {
+      "id": "example-a",
+      "name": "Example analysis A \u2014 Shackleton rim crest",
+      "kind": "example_analysis",
+      "eastLongitudeDeg": -154.29004621918875,
+      "latitudeDeg": -89.80235285354544,
+      "surfaceHeightM": 1703.41,
+      "summary": "Example analysis location on a local high of the Shackleton rim, about 6 km from the south pole. It is NOT an officially designated landing site.",
+      "stereographicX": -2600.0,
+      "stereographicY": -5400.0
+    },
+    {
+      "id": "example-b",
+      "name": "Example analysis B \u2014 near-side ridge",
+      "kind": "example_analysis",
+      "eastLongitudeDeg": 58.134022306396325,
+      "latitudeDeg": -89.71265740822516,
+      "surfaceHeightM": 1231.22,
+      "summary": "Example analysis location on a ridge near east longitude 58\u00b0, on the Earth-facing side of the south pole. It is NOT an officially designated landing site.",
+      "stereographicX": 7400.0,
+      "stereographicY": 4600.0
+    },
+    {
+      "id": "example-c",
+      "name": "Example analysis C \u2014 Shackleton floor",
+      "kind": "example_analysis",
+      "eastLongitudeDeg": 122.19573393471325,
+      "latitudeDeg": -89.78956100857326,
+      "surfaceHeightM": -2317.7,
+      "summary": "Example analysis location on the floor of Shackleton crater, surrounded by the rim. It is NOT an officially designated landing site.",
+      "stereographicX": 5400.0,
+      "stereographicY": -3400.0
+    }
+  ],
+  "method": "rasterio 1.x windowed read of COG via /vsicurl/. Source window rows 3589:4020 cols 3614:4045.",
+  "bytesHint": "heights omitted from this sidecar"
+}

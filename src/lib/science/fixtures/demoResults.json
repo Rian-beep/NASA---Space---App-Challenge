@@ -1,0 +1,138 @@
+{
+  "counts": {
+    "example-a": {
+      "exceeds_limits": 195,
+      "insufficient_data": 27,
+      "within_limits": 119
+    },
+    "example-b": {
+      "exceeds_limits": 206,
+      "insufficient_data": 48,
+      "within_limits": 87
+    },
+    "example-c": {
+      "exceeds_limits": 341
+    }
+  },
+  "chosen": {
+    "delayHours": 168,
+    "score": 1426.809472777778,
+    "baseline": {
+      "siteId": "example-a",
+      "arrivalUtc": "2026-12-05T06:00:00Z",
+      "status": "exceeds_limits",
+      "sunAccessHours": 76.81356647813584,
+      "earthAccessHours": 0.1884800565592448,
+      "overlapHours": 0.1884802777777778,
+      "sunInterruptionHours": 91.18643333333333,
+      "earthInterruptionHours": 167.81151972222222,
+      "sunTruncated": false,
+      "earthTruncated": true,
+      "statement": "Exceeds selected limits. Longest solar-access interruption is 91.19 hours from 2026-12-06T15:49:40.115Z to 2026-12-10T11:00:51.275Z, which exceeds the user assumption of 48.00 hours by 43.19 hours. Longest Earth-visibility interruption is 167.81 hours from 2026-12-05T06:00:00Z to 2026-12-12T05:48:41.471Z, which exceeds the user assumption of 24.00 hours by 143.81 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer."
+    },
+    "delayed": {
+      "siteId": "example-a",
+      "arrivalUtc": "2026-12-12T06:00:00Z",
+      "status": "within_limits",
+      "sunAccessHours": 168,
+      "earthAccessHours": 168,
+      "overlapHours": 168,
+      "sunInterruptionHours": 0,
+      "earthInterruptionHours": 0,
+      "sunTruncated": false,
+      "earthTruncated": false,
+      "statement": "Within selected limits. Longest solar-access interruption is 0.00 hours, inside the user assumption of 48.00 hours. Longest Earth-visibility interruption is 0.00 hours, inside the user assumption of 24.00 hours."
+    }
+  },
+  "baselineStatement": "Exceeds selected limits. Longest solar-access interruption is 91.19 hours from 2026-12-06T15:49:40.115Z to 2026-12-10T11:00:51.275Z, which exceeds the user assumption of 48.00 hours by 43.19 hours. Longest Earth-visibility interruption is 167.81 hours from 2026-12-05T06:00:00Z to 2026-12-12T05:48:41.471Z, which exceeds the user assumption of 24.00 hours by 143.81 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer.",
+  "delayedStatement": "Within selected limits. Longest solar-access interruption is 0.00 hours, inside the user assumption of 48.00 hours. Longest Earth-visibility interruption is 0.00 hours, inside the user assumption of 24.00 hours.",
+  "delta": {
+    "solarInterruptionDeltaHours": -91.18643333333333,
+    "earthInterruptionDeltaHours": -167.81151972222222,
+    "overlapDeltaHours": 167.81151972222222,
+    "statusChanged": true,
+    "summary": "Solar interruption -91.19 h; Earth interruption -167.81 h; Sun–Earth overlap +167.81 h; screening status changed from exceeds_limits to within_limits."
+  },
+  "alternatives": {
+    "anyMeetsLimits": false,
+    "boundsDescription": "No searched option meets all evaluated limits. Searched only the 3 provided sites at date offsets -48, -24, 0, +24 and +48 hours, with the same 168-hour duration and the same user-assumption interruption limits. Results are the least-violating options in that bounded set, not a global optimum.",
+    "top": [
+      {
+        "rank": 1,
+        "id": "example-a|48",
+        "site": "Example analysis A — Shackleton rim crest",
+        "arrivalUtc": "2026-12-07T06:00:00Z",
+        "meetsAllLimits": false,
+        "rankReason": "It does not meet all evaluated interruption limits; its worst interruption is 119.81 hours; Sun–Earth overlap is 48.19 hours; and the plan change is 48.00 (surface distance 0.00 km plus a 48.00-hour date offset).",
+        "shortfall": "Longest solar-access interruption is 77.01 hours from 2026-12-07T06:00:00Z to 2026-12-10T11:00:51.275Z, which exceeds the user assumption of 48.00 hours by 29.01 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer. Longest Earth-visibility interruption is 119.81 hours from 2026-12-07T06:00:00Z to 2026-12-12T05:48:41.471Z, which exceeds the user assumption of 24.00 hours by 95.81 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer.",
+        "status": "exceeds_limits",
+        "sunInterruptionHours": 77.01424305555555,
+        "earthInterruptionHours": 119.81151972222223,
+        "overlapHours": 48.18848027777778,
+        "sunAccessHours": 90.98575671542697,
+        "earthAccessHours": 48.18848005655924
+      },
+      {
+        "rank": 2,
+        "id": "example-a|24",
+        "site": "Example analysis A — Shackleton rim crest",
+        "arrivalUtc": "2026-12-06T06:00:00Z",
+        "meetsAllLimits": false,
+        "rankReason": "It does not meet all evaluated interruption limits; its worst interruption is 143.81 hours; Sun–Earth overlap is 24.19 hours; and the plan change is 24.00 (surface distance 0.00 km plus a 24.00-hour date offset).",
+        "shortfall": "Longest solar-access interruption is 91.19 hours from 2026-12-06T15:49:40.115Z to 2026-12-10T11:00:51.275Z, which exceeds the user assumption of 48.00 hours by 43.19 hours. Longest Earth-visibility interruption is 143.81 hours from 2026-12-06T06:00:00Z to 2026-12-12T05:48:41.471Z, which exceeds the user assumption of 24.00 hours by 119.81 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer.",
+        "status": "exceeds_limits",
+        "sunInterruptionHours": 91.18643333333333,
+        "earthInterruptionHours": 143.81151972222222,
+        "overlapHours": 24.188480277777778,
+        "sunAccessHours": 76.81356647813585,
+        "earthAccessHours": 24.188480056559246
+      },
+      {
+        "rank": 3,
+        "id": "example-a|0",
+        "site": "Example analysis A — Shackleton rim crest",
+        "arrivalUtc": "2026-12-05T06:00:00Z",
+        "meetsAllLimits": false,
+        "rankReason": "It does not meet all evaluated interruption limits; its worst interruption is 167.81 hours; Sun–Earth overlap is 0.19 hours; and the plan change is 0.00 (surface distance 0.00 km plus a 0.00-hour date offset).",
+        "shortfall": "Longest solar-access interruption is 91.19 hours from 2026-12-06T15:49:40.115Z to 2026-12-10T11:00:51.275Z, which exceeds the user assumption of 48.00 hours by 43.19 hours. Longest Earth-visibility interruption is 167.81 hours from 2026-12-05T06:00:00Z to 2026-12-12T05:48:41.471Z, which exceeds the user assumption of 24.00 hours by 143.81 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer.",
+        "status": "exceeds_limits",
+        "sunInterruptionHours": 91.18643333333333,
+        "earthInterruptionHours": 167.81151972222222,
+        "overlapHours": 0.1884802777777778,
+        "sunAccessHours": 76.81356647813584,
+        "earthAccessHours": 0.1884800565592448
+      },
+      {
+        "rank": 4,
+        "id": "example-c|0",
+        "site": "Example analysis C — Shackleton floor",
+        "arrivalUtc": "2026-12-05T06:00:00Z",
+        "meetsAllLimits": false,
+        "rankReason": "It does not meet all evaluated interruption limits; its worst interruption is 168.00 hours; Sun–Earth overlap is 0.00 hours; and the plan change is 8.25 (surface distance 8.25 km plus a 0.00-hour date offset).",
+        "shortfall": "Longest solar-access interruption is 168.00 hours from 2026-12-05T06:00:00Z to 2026-12-12T06:00:00Z, which exceeds the user assumption of 48.00 hours by 120.00 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer. Longest Earth-visibility interruption is 168.00 hours from 2026-12-05T06:00:00Z to 2026-12-12T06:00:00Z, which exceeds the user assumption of 24.00 hours by 144.00 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer.",
+        "status": "exceeds_limits",
+        "sunInterruptionHours": 168,
+        "earthInterruptionHours": 168,
+        "overlapHours": 0,
+        "sunAccessHours": 0,
+        "earthAccessHours": 0
+      },
+      {
+        "rank": 5,
+        "id": "example-b|0",
+        "site": "Example analysis B — near-side ridge",
+        "arrivalUtc": "2026-12-05T06:00:00Z",
+        "meetsAllLimits": false,
+        "rankReason": "It does not meet all evaluated interruption limits; its worst interruption is 168.00 hours; Sun–Earth overlap is 0.00 hours; and the plan change is 14.14 (surface distance 14.14 km plus a 0.00-hour date offset).",
+        "shortfall": "Longest solar-access interruption is 168.00 hours from 2026-12-05T06:00:00Z to 2026-12-12T06:00:00Z, which exceeds the user assumption of 48.00 hours by 120.00 hours. The in-window portion already exceeds the limit; the full real-world duration is not claimed and may be longer. Longest Earth-visibility interruption is 0.00 hours, inside the user assumption of 24.00 hours.",
+        "status": "exceeds_limits",
+        "sunInterruptionHours": 168,
+        "earthInterruptionHours": 0,
+        "overlapHours": 0,
+        "sunAccessHours": 0,
+        "earthAccessHours": 168
+      }
+    ]
+  },
+  "ephemerisKeys": 36
+}

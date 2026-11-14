@@ -1,0 +1,46 @@
+{
+  "attribution": "NASA GSFC PGDA, LOLA LDEM_80S_80MPP_ADJ (product 90), Barker et al. 2023, The Planetary Science Journal, doi:10.3847/PSJ/acf3e1.",
+  "productUrl": "https://pgda.gsfc.nasa.gov/products/90",
+  "fileUrl": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF",
+  "boundsStereographicM": {
+    "minX": -14880.0,
+    "maxX": 19680.0,
+    "minY": -17680.0,
+    "maxY": 16880.0
+  },
+  "corners": [
+    {
+      "x": -14880.0,
+      "y": 16880.0,
+      "eastLongitudeDeg": -41.39671136345978,
+      "latitudeDeg": -89.25793553190404
+    },
+    {
+      "x": 19680.0,
+      "y": 16880.0,
+      "eastLongitudeDeg": 49.37953006136303,
+      "latitudeDeg": -89.14498074093135
+    },
+    {
+      "x": 19680.0,
+      "y": -17680.0,
+      "eastLongitudeDeg": 131.93569910937038,
+      "latitudeDeg": -89.12757579782678
+    },
+    {
+      "x": -14880.0,
+      "y": -17680.0,
+      "eastLongitudeDeg": -139.9150634023673,
+      "latitudeDeg": -89.23794601193973
+    }
+  ],
+  "sourcePixelSpacingM": 80,
+  "previewResolutionM": 160.0,
+  "analysisResolutionM": 80,
+  "width": 216,
+  "height": 216,
+  "downsampling": "Display image only. 2x2 block mean of the native 80 m analysis window to 160 m, then a standard hillshade (illumination azimuth 315\u00b0, zenith 45\u00b0). This PNG is not the analysis grid and must not be sampled for horizons.",
+  "coordinateReference": "MOON_ME / DE421 sphere, radius 1737400 m, south-polar stereographic metres. +X toward east longitude 90\u00b0, +Y toward east longitude 0\u00b0. Row 0 is the maximum-Y side. originX and originY are the centre of pixel (0,0).",
+  "retrievedAtUtc": "2026-11-14T10:10:17Z",
+  "nodata": "none in the source window"
+}
