@@ -2,7 +2,10 @@
 export const PRESENTATION_BADGE = "Precomputed from NASA data";
 
 export const EXAMPLE_SITE_NOTE =
-  "Practice spots we picked. They are not official landing sites.";
+  "Practice spots are places we picked near the south pole. They are not official landing sites. Named missions come from NASA’s list of spacecraft on the Moon.";
+
+export const SKY_ONLY_PRACTICE =
+  "The sunlight and Earth check is saved only for the three practice spots near the south pole. This place is on the Moon. It is not a flight check.";
 
 export const SUN_PANEL_TEXT =
   "This only checks how long a sunlight gap you will accept. It does not model a battery.";

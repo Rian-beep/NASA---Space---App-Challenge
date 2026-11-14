@@ -4,6 +4,14 @@ import { useEffect, useId, useState } from "react";
 import type { AudienceMode, LunarSite, ScenarioInput, ScenarioResult } from "@/lib/science/types";
 import { EXAMPLE_SITE_NOTE } from "./copy";
 import {
+  MISSIONS,
+  formatMissionDate,
+  isImpact,
+  missionPrograms,
+  outcomePhrase,
+  scenarioPatchForMission,
+} from "@/lib/sites/missions";
+import {
   cx,
   datetimeLocalValueToIso,
   formatHours,
@@ -183,7 +191,7 @@ function PlaceFields({
       </legend>
       <p className="text-sm leading-6 text-stone-700">{EXAMPLE_SITE_NOTE}</p>
       <label className="flex flex-col gap-1 text-sm" htmlFor={selectId}>
-        <span className="font-medium text-stone-900">Example analysis location</span>
+        <span className="font-medium text-stone-900">Place</span>
         <select
           id={selectId}
           className="lw-control"
@@ -193,6 +201,7 @@ function PlaceFields({
             if (value === "custom") {
               onChange({
                 siteId: "custom",
+                name: scenario.customSite?.name || "Custom location",
                 customSite: scenario.customSite ?? {
                   name: "Custom location",
                   eastLongitudeDeg: Number.NaN,
@@ -202,35 +211,51 @@ function PlaceFields({
               });
               return;
             }
-            onChange({ siteId: value, customSite: undefined });
+            const mission = MISSIONS.find((item) => item.id === value);
+            if (mission) {
+              onChange(scenarioPatchForMission(mission));
+              return;
+            }
+            const place = sites.find((site) => site.id === value);
+            onChange({ siteId: value, name: place?.name ?? scenario.name, customSite: undefined });
           }}
         >
-          {sites.map((site) => (
-            <option key={site.id} value={site.id}>
-              {site.name}
-            </option>
+          <optgroup label="Practice spots">
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.name}
+              </option>
+            ))}
+          </optgroup>
+          {missionPrograms().map((program) => (
+            <optgroup key={program} label={program}>
+              {MISSIONS.filter((mission) => mission.program === program).map((mission) => (
+                <option key={mission.id} value={mission.id}>
+                  {mission.name}
+                  {isImpact(mission.outcome) ? " (impact)" : ""} — {outcomePhrase(mission.outcome)}, {formatMissionDate(mission.dateUtc)}
+                </option>
+              ))}
+            </optgroup>
           ))}
-          {mode !== "explore" ? <option value="custom">Coordinates I enter</option> : null}
+          <option value="custom">Coordinates I enter</option>
         </select>
       </label>
       {placeSummary ? <p className="text-sm leading-6 text-stone-700">{placeSummary}</p> : null}
-      {mode !== "explore" && custom ? (
-        <CustomCoordinates scenario={scenario} onChange={onChange} />
-      ) : null}
-      {mode !== "explore" && !custom && scenario.siteId ? (
-        <CoordinateReadout scenario={scenario} sites={sites} />
-      ) : null}
+      {custom ? <CustomCoordinates scenario={scenario} onChange={onChange} /> : null}
+      {!custom && scenario.siteId ? <CoordinateReadout scenario={scenario} sites={sites} /> : null}
     </fieldset>
   );
 }
 
 function CoordinateReadout({ scenario, sites }: { scenario: ScenarioInput; sites: LunarSite[] }) {
   const site = sites.find((item) => item.id === scenario.siteId);
-  if (!site) return null;
+  const point = site ?? scenario.customSite;
+  if (!point || !Number.isFinite(point.eastLongitudeDeg) || !Number.isFinite(point.latitudeDeg)) return null;
+  const height = "surfaceHeightM" in point ? point.surfaceHeightM : 0;
   return (
     <p className="text-sm leading-6 text-stone-700 tabular-nums">
-      {siteLabel(scenario, sites)} · {site.eastLongitudeDeg}° east longitude · {site.latitudeDeg}° latitude ·{" "}
-      {site.surfaceHeightM} m surface height
+      {siteLabel(scenario, sites)} · {point.eastLongitudeDeg}° east longitude · {point.latitudeDeg}° latitude ·{" "}
+      {height} m surface height
     </p>
   );
 }
