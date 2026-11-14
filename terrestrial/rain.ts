@@ -19,6 +19,39 @@ export function rainRiskFromForecast(input: {
   return "low";
 }
 
+/** Heavy rain or a strong gust in one hour. Thresholds are planning labels. */
+export function groundStorm(input: {
+  precipitationMm: number | null;
+  windSpeedMs: number | null;
+  gustSpeedMs: number | null;
+}): boolean {
+  const rain = present(input.precipitationMm) ? input.precipitationMm : 0;
+  const gust = present(input.gustSpeedMs)
+    ? input.gustSpeedMs
+    : present(input.windSpeedMs)
+      ? input.windSpeedMs
+      : 0;
+  return rain >= 2.5 || gust >= 17;
+}
+
+export function hourSentence(input: {
+  name: string;
+  temperatureC: number | null;
+  precipitationMm: number | null;
+  windSpeedMs: number | null;
+  groundStorm: boolean;
+}): string {
+  const temp = present(input.temperatureC) ? `${Math.round(input.temperatureC)}°C` : "temperature unknown";
+  const rain = present(input.precipitationMm)
+    ? `${input.precipitationMm.toFixed(1)} mm of rain`
+    : "rain unknown";
+  const wind = present(input.windSpeedMs) ? `wind ${Math.round(input.windSpeedMs)} m/s` : "wind unknown";
+  const storm = input.groundStorm
+    ? "A ground storm is in this hour: heavy rain or a strong gust."
+    : "No ground storm in this hour.";
+  return `This hour at ${input.name}: ${temp}, ${rain}, ${wind}. ${storm}`;
+}
+
 /** NASA POWER average millimetres per day. Null means we do not know. */
 export function rainRiskFromTypical(precipitationMmPerDay: number | null): RainRisk {
   if (!present(precipitationMmPerDay)) return "unknown";
