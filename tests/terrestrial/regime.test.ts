@@ -29,9 +29,9 @@ describe("regimeForDate", () => {
     expect(regimeForDate("2026-12-17", today)).toBe("forecast");
   });
 
-  it("uses typical weather on day 17 and on a past day", () => {
+  it("uses the recorded day in the past and the date pattern further ahead", () => {
     expect(regimeForDate("2026-12-18", today)).toBe("typical-for-this-date");
-    expect(regimeForDate("2026-11-30", today)).toBe("typical-for-this-date");
+    expect(regimeForDate("2026-11-30", today)).toBe("history");
   });
 
   it("rejects 31 February", () => {

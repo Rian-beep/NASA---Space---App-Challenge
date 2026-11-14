@@ -2,8 +2,12 @@
 
 export type StationId = "goldstone" | "madrid" | "canberra";
 
-/** Forecast: a published weather model for a near date. Typical: NASA monthly normals. */
-export type WeatherRegime = "forecast" | "typical-for-this-date";
+/**
+ * Forecast: a published weather model for a near date.
+ * History: the recorded day at the dish.
+ * Typical: the past pattern for that month and day, or a monthly normal if the day pattern is missing.
+ */
+export type WeatherRegime = "forecast" | "typical-for-this-date" | "history";
 
 export type RainRisk = "low" | "elevated" | "high" | "unknown";
 

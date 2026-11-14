@@ -3,10 +3,11 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { formatMissionDate, landedMissions } from "@/lib/sites/missions";
 import { STATIONS } from "../../../terrestrial/stations";
 import { earthFace, lunarView } from "../../../terrestrial/facing";
 import { LUNAR_PLACES } from "../../../terrestrial/lunarPlaces";
-import type { EarthDayReport, HourWeather, RainRisk, WeatherRegime } from "../../../terrestrial/types";
+import type { EarthDayReport, HourWeather, RainRisk, StationWeather } from "../../../terrestrial/types";
 import type { EarthStationPin } from "./EarthGlobe";
 
 const EarthView = dynamic(() => import("./EarthGlobe").then((mod) => mod.EarthGlobe), {
@@ -31,10 +32,13 @@ const RISK_WORD: Record<RainRisk, string> = {
   unknown: "Unknown",
 };
 
+const MISSION_DAYS = landedMissions();
+
 export function EarthStage({ date, onDate, loading, error, report }: EarthStageProps) {
   const [selectedId, setSelectedId] = useState<string | null>("goldstone");
   const [placeId, setPlaceId] = useState(LUNAR_PLACES[1].id);
   const [hour, setHour] = useState(() => new Date().getUTCHours());
+  const [missionId, setMissionId] = useState("");
   const place = LUNAR_PLACES.find((item) => item.id === placeId) ?? LUNAR_PLACES[0];
   const instant = `${date}T${String(hour).padStart(2, "0")}:00:00.000Z`;
   const face = useMemo(() => {
@@ -52,13 +56,22 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
     }
   }, [place, instant]);
   const stations = useMemo(() => pinsFor(report, hour), [report, hour]);
-  const satelliteUrl = report && date <= report.today ? `/api/earth/picture?date=${date}` : null;
+  const satelliteUrl =
+    report && date <= report.today && date >= "2018-01-01" ? `/api/earth/picture?date=${date}` : null;
   const live = isLiveHour(report, date, hour);
+  const missionsOnDay = MISSION_DAYS.filter((mission) => mission.dateUtc === date);
 
   function showLive() {
     const now = new Date();
+    setMissionId("");
     onDate(now.toISOString().slice(0, 10));
     setHour(now.getUTCHours());
+  }
+
+  function pickMission(id: string) {
+    setMissionId(id);
+    const mission = MISSION_DAYS.find((item) => item.id === id);
+    if (mission) onDate(mission.dateUtc);
   }
 
   return (
@@ -103,11 +116,36 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
 
         <div className="min-w-0 bg-[#10131a] p-3">
           <label className="flex min-w-0 flex-col gap-1 text-sm">
+            <span className="font-medium">Past mission</span>
+            <select
+              value={missionId}
+              onChange={(event) => pickMission(event.target.value)}
+              className="w-full min-w-0 border border-stone-500 bg-[#07080d] px-2 py-1.5 text-base text-stone-100"
+            >
+              <option value="">Choose a mission day</option>
+              {MISSION_DAYS.map((mission) => (
+                <option key={mission.id} value={mission.id}>
+                  {formatMissionDate(mission.dateUtc)} · {mission.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {missionsOnDay.length > 0 ? (
+            <p className="mt-2 text-pretty text-sm leading-6 text-stone-100">
+              {missionsOnDay.map((mission) => mission.name).join(", ")}. The dishes show the recorded weather for
+              that day, and the Kp line is the storm index for that date. The Sun page lists flares for the last 7
+              days. Older mission days use this Kp index.
+            </p>
+          ) : null}
+          <label className="mt-3 flex min-w-0 flex-col gap-1 text-sm">
             <span className="font-medium">Day</span>
             <input
               type="date"
               value={date}
-              onChange={(event) => onDate(event.target.value)}
+              onChange={(event) => {
+                setMissionId("");
+                onDate(event.target.value);
+              }}
               className="w-full min-w-0 border border-stone-500 bg-[#07080d] px-2 py-1.5 text-base text-stone-100 caret-stone-100"
             />
           </label>
@@ -134,7 +172,10 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
             </button>
             <button
               type="button"
-              onClick={() => onDate(PRACTICE_DAY)}
+              onClick={() => {
+                setMissionId("");
+                onDate(PRACTICE_DAY);
+              }}
               className="border border-stone-500 px-2 py-1.5 text-sm text-stone-100"
             >
               Practice day
@@ -186,7 +227,11 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
 
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
           <p>NASA Blue Marble, and a NASA VIIRS satellite picture when one exists for that day.</p>
-          <p>{sourceLine(report)} Solar storms are from NOAA. A ground storm means heavy rain or a strong gust in that hour.</p>
+          <p>
+            {sourceLine(report)} A future date beyond the forecast uses NASA daily records for that month and day,
+            1991–2020. A past day uses the recorded weather. Kp on a past day is from GFZ. Recent solar storms are
+            from NOAA.
+          </p>
         </footer>
       </section>
     </div>
@@ -273,14 +318,17 @@ function isLiveHour(report: EarthDayReport | null, date: string, hour: number): 
 function regimeWords(report: EarthDayReport, live: boolean): string | null {
   const words: string[] = [];
   for (const item of report.weather) {
-    const word = live && item.regime === "forecast" ? "Live this hour" : regimeWord(item.regime);
+    const word = wordFor(item, live);
     if (!words.includes(word)) words.push(word);
   }
   return words.length > 0 ? words.join(" · ") : null;
 }
 
-function regimeWord(regime: WeatherRegime): string {
-  return regime === "forecast" ? "Forecast" : "Typical for this month";
+function wordFor(item: StationWeather, live: boolean): string {
+  if (item.regime === "forecast") return live ? "Live this hour" : "Forecast";
+  if (item.regime === "history") return "Recorded on this day";
+  if (item.sourceName === "NASA POWER date climate") return "Usual for this date";
+  return "Typical for this month";
 }
 
 function moonWords(moonUp: boolean | null | undefined): string {
