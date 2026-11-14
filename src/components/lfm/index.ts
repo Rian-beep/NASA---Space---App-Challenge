@@ -1,0 +1,1 @@
+export { IceProspectivityCard } from "./IceProspectivityCard";

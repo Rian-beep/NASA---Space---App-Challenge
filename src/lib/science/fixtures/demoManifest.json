@@ -1,0 +1,59 @@
+{
+  "sites": [
+    {
+      "id": "example-a",
+      "name": "Example analysis A \u2014 Shackleton rim crest",
+      "kind": "example_analysis",
+      "eastLongitudeDeg": -154.29004621918875,
+      "latitudeDeg": -89.80235285354544,
+      "surfaceHeightM": 1703.41,
+      "summary": "Example analysis location on a local high of the Shackleton rim, about 6 km from the south pole. It is NOT an officially designated landing site."
+    },
+    {
+      "id": "example-b",
+      "name": "Example analysis B \u2014 near-side ridge",
+      "kind": "example_analysis",
+      "eastLongitudeDeg": 58.134022306396325,
+      "latitudeDeg": -89.71265740822516,
+      "surfaceHeightM": 1231.22,
+      "summary": "Example analysis location on a ridge near east longitude 58\u00b0, on the Earth-facing side of the south pole. It is NOT an officially designated landing site."
+    },
+    {
+      "id": "example-c",
+      "name": "Example analysis C \u2014 Shackleton floor",
+      "kind": "example_analysis",
+      "eastLongitudeDeg": 122.19573393471325,
+      "latitudeDeg": -89.78956100857326,
+      "surfaceHeightM": -2317.7,
+      "summary": "Example analysis location on the floor of Shackleton crater, surrounded by the rim. It is NOT an officially designated landing site."
+    }
+  ],
+  "baselineScenarioId": "baseline",
+  "scenarios": [
+    {
+      "id": "baseline",
+      "name": "Baseline plan \u2014 Example analysis A \u2014 Shackleton rim crest",
+      "siteId": "example-a",
+      "arrivalUtc": "2026-12-05T06:00:00Z",
+      "durationHours": 168,
+      "solarPanelHeightM": 2,
+      "antennaHeightM": 3,
+      "maxSolarInterruptionHours": 48,
+      "maxEarthInterruptionHours": 24,
+      "isBaseline": true
+    },
+    {
+      "id": "delayed-landing",
+      "name": "Landing delay +168 h \u2014 Example analysis A \u2014 Shackleton rim crest",
+      "siteId": "example-a",
+      "arrivalUtc": "2026-12-12T06:00:00Z",
+      "durationHours": 168,
+      "solarPanelHeightM": 2,
+      "antennaHeightM": 3,
+      "maxSolarInterruptionHours": 48,
+      "maxEarthInterruptionHours": 24,
+      "isBaseline": false
+    }
+  ],
+  "demonstrationNotes": "Example analysis A, B, and C are samples of the LOLA grid. They are NOT officially designated landing sites. The baseline is Example analysis A \u2014 Shackleton rim crest, arriving 2026-12-05T06:00:00Z for 168 hours. The interruption limits are user assumptions, not NASA requirements: 48 hours of solar interruption, 24 hours of Earth interruption, a solar panel 2 m above the surface, and an antenna 3 m above the surface. The calculated baseline exceeds those limits. Solar access is 76.81 hours and the longest solar interruption is 91.19 hours, fully inside the window, 43.19 hours over the 48-hour assumption. Earth access is 0.19 hours and the longest in-window Earth interruption is 167.81 hours, which touches the window edge so the full real-world duration is not claimed; that in-window portion already exceeds the 24-hour assumption by 143.81 hours. Sun\u2013Earth overlap is 0.19 hours. Delaying landing by 168 hours, to 2026-12-12T06:00:00Z, changes the result: both interruptions fall to 0.00 hours, overlap rises to 168.00 hours, and the screen is within the user assumptions. A search of the three example sites at date offsets -48, -24, 0, +24, +48, and +168 hours finds one option inside the user assumptions: the same crest at 2026-12-12T06:00:00Z, with both interruptions at 0.00 hours and 168.00 hours of overlap. The next option, the near-side ridge one week later, still misses the sunlight limit (worst interruption 84.72 hours, overlap 83.28 hours). This is a bounded set of 18 options, not a global optimum."
+}

@@ -1,0 +1,89 @@
+{
+  "example-a": {
+    "status": "ready",
+    "modelId": "nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model",
+    "checkpoint": "nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model/ni_lfm_ps8_all_modalities_s42.ckpt",
+    "license": "Apache-2.0",
+    "task": "polar_ice_prospectivity_regression",
+    "siteId": "example-a",
+    "value": 0.09378237277269363,
+    "patchMean": 0.5484961271286011,
+    "resolutionM": 240,
+    "extentNote": "Neighbourhood within one pixel of row 9, col 231 of patch_0005_0004_S_80S. Pixel centre -154.44003\u00b0 E, -89.79821\u00b0 (requested -154.29004621918875\u00b0 E, -89.80235285354544\u00b0). GeoTIFF spacing 238.56 m; the model card states 240 m/px. South pole only, within the SomBench 80S stack.",
+    "retrievedAtUtc": "2026-11-14T10:14:23Z",
+    "sourceUrls": [
+      "https://huggingface.co/nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model",
+      "https://huggingface.co/nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model",
+      "https://github.com/NASA-IMPACT/NASA-IBM-Lunar-Foundation-Model",
+      "https://huggingface.co/datasets/nasa-ibm-ai4science/Sombench-Ice-Prospectivity-Regression",
+      "https://science.nasa.gov/science-research/artificial-intelligence-lunar-foundation-model/"
+    ],
+    "limitations": [
+      "This regresses the Coyan et al. (2025) knowledge-driven fuzzy-overlay map. It is not measured ice.",
+      "Not a resource estimate, and not evidence that ice is present at a location.",
+      "Not validated for landing-site certification, ISRU, or hazard clearance.",
+      "The backbone maintains no geodetic frame.",
+      "Polar only: within 10\u00b0 of each pole, evaluated at 240 m per pixel.",
+      "Outputs must never replace JPL Horizons ephemerides or LOLA horizon visibility."
+    ],
+    "statement": "Mean model prospectivity within one pixel of the site is 0.093782. The 256\u00d7256 patch mean is 0.548496. This regresses the Coyan et al. (2025) fuzzy-overlay map. It is not measured ice, and it does not affect Sun or Earth visibility."
+  },
+  "example-b": {
+    "status": "ready",
+    "modelId": "nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model",
+    "checkpoint": "nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model/ni_lfm_ps8_all_modalities_s42.ckpt",
+    "license": "Apache-2.0",
+    "task": "polar_ice_prospectivity_regression",
+    "siteId": "example-b",
+    "value": 0.05329431965947151,
+    "patchMean": 0.7137881517410278,
+    "resolutionM": 240,
+    "extentNote": "Neighbourhood within one pixel of row 223, col 17 of patch_0004_0005_S_80S. Pixel centre 58.49573\u00b0 E, -89.71223\u00b0 (requested 58.134022306396325\u00b0 E, -89.71265740822516\u00b0). GeoTIFF spacing 238.56 m; the model card states 240 m/px. South pole only, within the SomBench 80S stack.",
+    "retrievedAtUtc": "2026-11-14T10:14:23Z",
+    "sourceUrls": [
+      "https://huggingface.co/nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model",
+      "https://huggingface.co/nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model",
+      "https://github.com/NASA-IMPACT/NASA-IBM-Lunar-Foundation-Model",
+      "https://huggingface.co/datasets/nasa-ibm-ai4science/Sombench-Ice-Prospectivity-Regression",
+      "https://science.nasa.gov/science-research/artificial-intelligence-lunar-foundation-model/"
+    ],
+    "limitations": [
+      "This regresses the Coyan et al. (2025) knowledge-driven fuzzy-overlay map. It is not measured ice.",
+      "Not a resource estimate, and not evidence that ice is present at a location.",
+      "Not validated for landing-site certification, ISRU, or hazard clearance.",
+      "The backbone maintains no geodetic frame.",
+      "Polar only: within 10\u00b0 of each pole, evaluated at 240 m per pixel.",
+      "Outputs must never replace JPL Horizons ephemerides or LOLA horizon visibility."
+    ],
+    "statement": "Mean model prospectivity within one pixel of the site is 0.053294. The 256\u00d7256 patch mean is 0.713788. This regresses the Coyan et al. (2025) fuzzy-overlay map. It is not measured ice, and it does not affect Sun or Earth visibility."
+  },
+  "example-c": {
+    "status": "ready",
+    "modelId": "nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model",
+    "checkpoint": "nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model/ni_lfm_ps8_all_modalities_s42.ckpt",
+    "license": "Apache-2.0",
+    "task": "polar_ice_prospectivity_regression",
+    "siteId": "example-c",
+    "value": 0.9987058639526367,
+    "patchMean": 0.591793954372406,
+    "resolutionM": 240,
+    "extentNote": "Neighbourhood within one pixel of row 0, col 9 of patch_0005_0005_S_80S. Pixel centre 121.32869\u00b0 E, -89.78689\u00b0 (requested 122.19573393471325\u00b0 E, -89.78956100857326\u00b0). GeoTIFF spacing 238.56 m; the model card states 240 m/px. South pole only, within the SomBench 80S stack.",
+    "retrievedAtUtc": "2026-11-14T10:14:23Z",
+    "sourceUrls": [
+      "https://huggingface.co/nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model",
+      "https://huggingface.co/nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model",
+      "https://github.com/NASA-IMPACT/NASA-IBM-Lunar-Foundation-Model",
+      "https://huggingface.co/datasets/nasa-ibm-ai4science/Sombench-Ice-Prospectivity-Regression",
+      "https://science.nasa.gov/science-research/artificial-intelligence-lunar-foundation-model/"
+    ],
+    "limitations": [
+      "This regresses the Coyan et al. (2025) knowledge-driven fuzzy-overlay map. It is not measured ice.",
+      "Not a resource estimate, and not evidence that ice is present at a location.",
+      "Not validated for landing-site certification, ISRU, or hazard clearance.",
+      "The backbone maintains no geodetic frame.",
+      "Polar only: within 10\u00b0 of each pole, evaluated at 240 m per pixel.",
+      "Outputs must never replace JPL Horizons ephemerides or LOLA horizon visibility."
+    ],
+    "statement": "Mean model prospectivity within one pixel of the site is 0.998706. The 256\u00d7256 patch mean is 0.591794. This regresses the Coyan et al. (2025) fuzzy-overlay map. It is not measured ice, and it does not affect Sun or Earth visibility."
+  }
+}
