@@ -88,7 +88,7 @@ export function SunStage({ loading, error, report }: SunStageProps) {
               <p className="mt-2 text-pretty text-sm leading-6 text-stone-100">{report.caveat}</p>
               <h2 className="mt-4 text-sm font-medium text-stone-100">Latest NASA photo</h2>
               <p className="mt-1 text-pretty text-sm leading-6 text-stone-100">
-                Bright patches are hot gas. The same photo sits on the model.
+                Bright patches are hot gas. That photo is wrapped on the front of the sphere.
               </p>
               {photoFailed ? (
                 <p className="mt-2 text-sm leading-6 text-stone-100">The NASA photo did not load.</p>
@@ -123,7 +123,7 @@ export function SunStage({ loading, error, report }: SunStageProps) {
         ) : null}
 
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
-          <p>The disk is the latest NASA photo. The glow behind it follows the live flare class.</p>
+          <p>Drag the sphere to turn it. The glow follows the live flare class.</p>
           <p>Flares are from NOAA GOES. The photo is NASA SDO AIA 193.</p>
         </footer>
       </section>
