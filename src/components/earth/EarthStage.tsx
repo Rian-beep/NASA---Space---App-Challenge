@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { formatMissionDate, landedMissions } from "@/lib/sites/missions";
 import { STATIONS } from "../../../terrestrial/stations";
 import { earthFace, lunarView } from "../../../terrestrial/facing";
-import { LUNAR_PLACES } from "../../../terrestrial/lunarPlaces";
+import { LUNAR_PLACES, placesOnTheMoon } from "../../../terrestrial/lunarPlaces";
 import type { EarthDayReport, HourWeather, RainRisk, StationWeather } from "../../../terrestrial/types";
 import type { EarthStationPin } from "./EarthGlobe";
 
@@ -39,7 +39,9 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
   const [placeId, setPlaceId] = useState(LUNAR_PLACES[1].id);
   const [hour, setHour] = useState(() => new Date().getUTCHours());
   const [missionId, setMissionId] = useState("");
-  const place = LUNAR_PLACES.find((item) => item.id === placeId) ?? LUNAR_PLACES[0];
+  const places = useMemo(() => placesOnTheMoon(MISSION_DAYS), []);
+  const place = places.find((item) => item.id === placeId) ?? places[0];
+  const landing = MISSION_DAYS.find((item) => item.id === place.id);
   const instant = `${date}T${String(hour).padStart(2, "0")}:00:00.000Z`;
   const face = useMemo(() => {
     try {
@@ -71,7 +73,20 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
   function pickMission(id: string) {
     setMissionId(id);
     const mission = MISSION_DAYS.find((item) => item.id === id);
-    if (mission) onDate(mission.dateUtc);
+    if (!mission) return;
+    setPlaceId(mission.id);
+    onDate(mission.dateUtc);
+  }
+
+  function pickPlace(id: string) {
+    setPlaceId(id);
+    const mission = MISSION_DAYS.find((item) => item.id === id);
+    if (!mission) {
+      setMissionId("");
+      return;
+    }
+    setMissionId(mission.id);
+    onDate(mission.dateUtc);
   }
 
   return (
@@ -86,7 +101,7 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
               ? {
                   latitudeDeg: face.latitudeDeg,
                   eastLongitudeDeg: face.eastLongitudeDeg,
-                  label: "Faces the Moon",
+                  label: landing ? `Toward ${landing.name}` : "Faces the Moon",
                 }
               : null
           }
@@ -185,22 +200,32 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
             <span className="font-medium">Place on the Moon</span>
             <select
               value={place.id}
-              onChange={(event) => setPlaceId(event.target.value)}
+              onChange={(event) => pickPlace(event.target.value)}
               className="w-full min-w-0 border border-stone-500 bg-[#07080d] px-2 py-1.5 text-base text-stone-100"
             >
-              {LUNAR_PLACES.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
+              <optgroup label="Practice spots">
+                {LUNAR_PLACES.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Past landings">
+                {MISSION_DAYS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </label>
           {face ? (
             <p className="mt-3 text-pretty text-sm leading-6 text-stone-100">
-              At this hour the Moon is overhead near {formatLat(face.latitudeDeg)},{" "}
-              {formatLon(face.eastLongitudeDeg)}. That is the middle of the side you would see from the Moon.
-              Earth&apos;s spin moves it. The place you pick on the Moon barely moves that middle, because the Moon
-              is small next to the distance to Earth.
+              The globe is the side of Earth turned toward {place.name}
+              {landing?.place ? ` (${landing.place})` : ""}. That place on the Moon is at{" "}
+              {formatLat(place.latitudeDeg)}, {formatLon(place.eastLongitudeDeg)}. The Moon is overhead near{" "}
+              {formatLat(face.latitudeDeg)}, {formatLon(face.eastLongitudeDeg)}. Earth&apos;s spin moves that spot
+              through the day.
             </p>
           ) : null}
           {view ? (
