@@ -22,6 +22,8 @@ type EarthStageProps = {
   report: EarthDayReport | null;
 };
 
+const PRACTICE_DAY = "2026-12-05";
+
 const RISK_WORD: Record<RainRisk, string> = {
   low: "Low",
   elevated: "Elevated",
@@ -51,6 +53,13 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
   }, [place, instant]);
   const stations = useMemo(() => pinsFor(report, hour), [report, hour]);
   const satelliteUrl = report && date <= report.today ? `/api/earth/picture?date=${date}` : null;
+  const live = isLiveHour(report, date, hour);
+
+  function showLive() {
+    const now = new Date();
+    onDate(now.toISOString().slice(0, 10));
+    setHour(now.getUTCHours());
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#07080d] text-stone-100 [color-scheme:dark] lg:h-screen lg:min-h-0 lg:flex-row-reverse lg:overflow-hidden">
@@ -78,14 +87,18 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
         <header className="min-w-0 bg-[#10131a] p-3">
           <h1 className="text-balance text-2xl font-semibold tracking-tight text-stone-100">Earth dishes</h1>
           <p className="mt-1 text-pretty text-sm leading-6 text-stone-100">
-            The side of Earth turned toward the Moon, and the weather above the three NASA dishes.
+            {live
+              ? "Live weather this hour above the three NASA dishes, on the side of Earth turned toward the Moon."
+              : "The side of Earth turned toward the Moon, and the weather above the three NASA dishes."}
           </p>
-          <Link
-            href="/"
-            className="mt-2 inline-block text-sm text-stone-100 underline decoration-stone-500 underline-offset-2"
-          >
-            Moon view
-          </Link>
+          <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/" className="text-sm text-stone-100 underline decoration-stone-500 underline-offset-2">
+              Moon view
+            </Link>
+            <Link href="/sun" className="text-sm text-stone-100 underline decoration-stone-500 underline-offset-2">
+              Sun and flares
+            </Link>
+          </p>
         </header>
 
         <div className="min-w-0 bg-[#10131a] p-3">
@@ -107,8 +120,26 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
               value={hour}
               onChange={(event) => setHour(Number(event.target.value))}
             />
-            <span>{String(hour).padStart(2, "0")}:00</span>
+            <span>
+              {String(hour).padStart(2, "0")}:00 UTC{live ? " · Live" : ""}
+            </span>
           </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={showLive}
+              className="border border-stone-500 px-2 py-1.5 text-sm text-stone-100"
+            >
+              Live now
+            </button>
+            <button
+              type="button"
+              onClick={() => onDate(PRACTICE_DAY)}
+              className="border border-stone-500 px-2 py-1.5 text-sm text-stone-100"
+            >
+              Practice day
+            </button>
+          </div>
           <label className="mt-3 flex min-w-0 flex-col gap-1 text-sm">
             <span className="font-medium">Place on the Moon</span>
             <select
@@ -150,7 +181,7 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
         </div>
 
         {report ? (
-          <ReportPanel report={report} hour={hour} selectedId={selectedId} onSelect={setSelectedId} />
+          <ReportPanel report={report} hour={hour} live={live} selectedId={selectedId} onSelect={setSelectedId} />
         ) : null}
 
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
@@ -165,15 +196,17 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
 function ReportPanel({
   report,
   hour,
+  live,
   selectedId,
   onSelect,
 }: {
   report: EarthDayReport;
   hour: number;
+  live: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
-  const regime = regimeWords(report);
+  const regime = regimeWords(report, live);
 
   return (
     <div className="flex min-w-0 flex-col gap-3 bg-[#10131a] p-3">
@@ -232,11 +265,15 @@ function pinsFor(report: EarthDayReport | null, hour: number): EarthStationPin[]
   });
 }
 
-function regimeWords(report: EarthDayReport): string | null {
+function isLiveHour(report: EarthDayReport | null, date: string, hour: number): boolean {
+  if (!report || date !== report.today || hour !== new Date().getUTCHours()) return false;
+  return report.weather.some((item) => item.regime === "forecast");
+}
+
+function regimeWords(report: EarthDayReport, live: boolean): string | null {
   const words: string[] = [];
-  const source = report.weather.length > 0 ? report.weather : [];
-  for (const item of source) {
-    const word = regimeWord(item.regime);
+  for (const item of report.weather) {
+    const word = live && item.regime === "forecast" ? "Live this hour" : regimeWord(item.regime);
     if (!words.includes(word)) words.push(word);
   }
   return words.length > 0 ? words.join(" · ") : null;
