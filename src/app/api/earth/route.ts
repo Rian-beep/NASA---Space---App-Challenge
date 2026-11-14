@@ -43,7 +43,20 @@ function json(body: unknown, status: number, cacheControl: string) {
   });
 }
 
+const hits: number[] = [];
+
+function tooManyRequests(): boolean {
+  const now = Date.now();
+  while (hits.length > 0 && now - hits[0] > 60_000) hits.shift();
+  if (hits.length >= 60) return true;
+  hits.push(now);
+  return false;
+}
+
 export async function GET(request: Request) {
+  if (tooManyRequests()) {
+    return json({ error: "Too many Earth reads. Wait a minute and try again." }, 429, "no-store");
+  }
   const today = utcToday();
   const date = new URL(request.url).searchParams.get("date") ?? today;
   if (!isCalendarDay(date)) {

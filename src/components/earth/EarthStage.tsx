@@ -4,7 +4,9 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { STATIONS } from "../../../terrestrial/stations";
-import type { EarthDayReport, RainRisk, WeatherRegime } from "../../../terrestrial/types";
+import { earthFace, lunarView } from "../../../terrestrial/facing";
+import { LUNAR_PLACES } from "../../../terrestrial/lunarPlaces";
+import type { EarthDayReport, HourWeather, RainRisk, WeatherRegime } from "../../../terrestrial/types";
 import type { EarthStationPin } from "./EarthGlobe";
 
 const EarthView = dynamic(() => import("./EarthGlobe").then((mod) => mod.EarthGlobe), {
@@ -28,13 +30,46 @@ const RISK_WORD: Record<RainRisk, string> = {
 };
 
 export function EarthStage({ date, onDate, loading, error, report }: EarthStageProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const stations = useMemo(() => pinsFor(report), [report]);
+  const [selectedId, setSelectedId] = useState<string | null>("goldstone");
+  const [placeId, setPlaceId] = useState(LUNAR_PLACES[1].id);
+  const [hour, setHour] = useState(() => new Date().getUTCHours());
+  const place = LUNAR_PLACES.find((item) => item.id === placeId) ?? LUNAR_PLACES[0];
+  const instant = `${date}T${String(hour).padStart(2, "0")}:00:00.000Z`;
+  const face = useMemo(() => {
+    try {
+      return earthFace(instant);
+    } catch {
+      return null;
+    }
+  }, [instant]);
+  const view = useMemo(() => {
+    try {
+      return lunarView(place.id, place.latitudeDeg, place.eastLongitudeDeg, instant);
+    } catch {
+      return null;
+    }
+  }, [place, instant]);
+  const stations = useMemo(() => pinsFor(report, hour), [report, hour]);
+  const satelliteUrl = report && date <= report.today ? `/api/earth/picture?date=${date}` : null;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#07080d] text-stone-100 [color-scheme:dark] lg:h-screen lg:min-h-0 lg:flex-row-reverse lg:overflow-hidden">
       <div className="relative h-[14rem] w-full shrink-0 lg:h-full lg:min-h-0 lg:w-auto lg:min-w-0 lg:flex-1">
-        <EarthView stations={stations} selectedId={selectedId} onSelect={setSelectedId} />
+        <EarthView
+          stations={stations}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          aim={
+            face
+              ? {
+                  latitudeDeg: face.latitudeDeg,
+                  eastLongitudeDeg: face.eastLongitudeDeg,
+                  label: "Faces the Moon",
+                }
+              : null
+          }
+          satelliteUrl={satelliteUrl}
+        />
       </div>
       <section
         aria-label="Earth dishes"
@@ -43,7 +78,7 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
         <header className="min-w-0 bg-[#10131a] p-3">
           <h1 className="text-balance text-2xl font-semibold tracking-tight text-stone-100">Earth dishes</h1>
           <p className="mt-1 text-pretty text-sm leading-6 text-stone-100">
-            Weather at the three NASA listening sites, for the day you pick.
+            The side of Earth turned toward the Moon, and the weather above the three NASA dishes.
           </p>
           <Link
             href="/"
@@ -63,6 +98,45 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
               className="w-full min-w-0 border border-stone-500 bg-[#07080d] px-2 py-1.5 text-base text-stone-100 caret-stone-100"
             />
           </label>
+          <label className="mt-3 flex min-w-0 flex-col gap-1 text-sm">
+            <span className="font-medium">Hour, UTC</span>
+            <input
+              type="range"
+              min={0}
+              max={23}
+              value={hour}
+              onChange={(event) => setHour(Number(event.target.value))}
+            />
+            <span>{String(hour).padStart(2, "0")}:00</span>
+          </label>
+          <label className="mt-3 flex min-w-0 flex-col gap-1 text-sm">
+            <span className="font-medium">Place on the Moon</span>
+            <select
+              value={place.id}
+              onChange={(event) => setPlaceId(event.target.value)}
+              className="w-full min-w-0 border border-stone-500 bg-[#07080d] px-2 py-1.5 text-base text-stone-100"
+            >
+              {LUNAR_PLACES.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {face ? (
+            <p className="mt-3 text-pretty text-sm leading-6 text-stone-100">
+              At this hour the Moon is overhead near {formatLat(face.latitudeDeg)},{" "}
+              {formatLon(face.eastLongitudeDeg)}. That is the middle of the side you would see from the Moon.
+              Earth&apos;s spin moves it. The place you pick on the Moon barely moves that middle, because the Moon
+              is small next to the distance to Earth.
+            </p>
+          ) : null}
+          {view ? (
+            <p className="mt-2 text-pretty text-sm leading-6 text-stone-100">
+              From {place.name}, the centre of Earth is {view.earthAboveHorizon ? "above" : "below"} the Moon&apos;s
+              own horizon, before hills.
+            </p>
+          ) : null}
           {loading && !report ? (
             <p className="mt-3 text-sm leading-6 text-stone-100" role="status">
               Reading weather…
@@ -75,11 +149,13 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
           ) : null}
         </div>
 
-        {report ? <ReportPanel report={report} selectedId={selectedId} onSelect={setSelectedId} /> : null}
+        {report ? (
+          <ReportPanel report={report} hour={hour} selectedId={selectedId} onSelect={setSelectedId} />
+        ) : null}
 
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
-          <p>NASA Blue Marble / Visible Earth. The cloud picture is not this date&apos;s forecast.</p>
-          <p>Open-Meteo, NASA POWER, and NOAA.</p>
+          <p>NASA Blue Marble, and a NASA VIIRS satellite picture when one exists for that day.</p>
+          <p>{sourceLine(report)} Solar storms are from NOAA. A ground storm means heavy rain or a strong gust in that hour.</p>
         </footer>
       </section>
     </div>
@@ -88,10 +164,12 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
 
 function ReportPanel({
   report,
+  hour,
   selectedId,
   onSelect,
 }: {
   report: EarthDayReport;
+  hour: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
@@ -122,6 +200,9 @@ function ReportPanel({
                 </span>
                 <span className="mt-1 block text-sm leading-6">Rain risk {RISK_WORD[risk]}</span>
                 <span className="block text-sm leading-6">{moonWords(moon?.moonUp)}</span>
+                {hourLine(weather?.hours, hour) ? (
+                  <span className="mt-1 block text-pretty text-sm leading-6">{hourLine(weather?.hours, hour)}</span>
+                ) : null}
                 {weather?.sentence ? (
                   <span className="mt-1 block text-pretty text-sm leading-6">{weather.sentence}</span>
                 ) : null}
@@ -136,14 +217,19 @@ function ReportPanel({
   );
 }
 
-function pinsFor(report: EarthDayReport | null): EarthStationPin[] {
-  return STATIONS.map((station) => ({
-    id: station.id,
-    name: station.name,
-    latitudeDeg: station.latitudeDeg,
-    eastLongitudeDeg: station.eastLongitudeDeg,
-    rainRisk: report?.weather.find((item) => item.stationId === station.id)?.rainRisk ?? "unknown",
-  }));
+function pinsFor(report: EarthDayReport | null, hour: number): EarthStationPin[] {
+  return STATIONS.map((station) => {
+    const weather = report?.weather.find((item) => item.stationId === station.id);
+    const sample = weather?.hours?.find((item) => new Date(item.timeUtc).getUTCHours() === hour);
+    return {
+      id: station.id,
+      name: station.name,
+      latitudeDeg: station.latitudeDeg,
+      eastLongitudeDeg: station.eastLongitudeDeg,
+      rainRisk: weather?.rainRisk ?? "unknown",
+      groundStorm: sample?.groundStorm ?? false,
+    };
+  });
 }
 
 function regimeWords(report: EarthDayReport): string | null {
@@ -164,4 +250,27 @@ function moonWords(moonUp: boolean | null | undefined): string {
   if (moonUp === true) return "Moon up";
   if (moonUp === false) return "Moon down";
   return "Moon height unknown";
+}
+
+function hourLine(hours: HourWeather[] | undefined, hour: number): string | null {
+  const sample = hours?.find((item) => new Date(item.timeUtc).getUTCHours() === hour);
+  return sample?.sentence ?? null;
+}
+
+function sourceLine(report: EarthDayReport | null): string {
+  if (!report || report.weather.length === 0) {
+    return "Dish weather uses Meteomatics when a login is set. Otherwise Open-Meteo and NASA POWER.";
+  }
+  const names = [...new Set(report.weather.map((item) => item.sourceName))];
+  return `${names.join(", ")} for the weather above each dish.`;
+}
+
+function formatLat(degrees: number): string {
+  const side = degrees >= 0 ? "N" : "S";
+  return `${Math.abs(degrees).toFixed(1)}° ${side}`;
+}
+
+function formatLon(degrees: number): string {
+  const side = degrees >= 0 ? "E" : "W";
+  return `${Math.abs(degrees).toFixed(1)}° ${side}`;
 }

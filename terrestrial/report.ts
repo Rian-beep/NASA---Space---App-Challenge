@@ -1,12 +1,8 @@
-import {
-  meteomaticsAuthorization,
-  meteomaticsUrl,
-  parseMeteomaticsDay,
-} from "./meteomatics";
+import { meteomaticsAuthorization, meteomaticsUrl, parseMeteomaticsDay, parseMeteomaticsHours } from "./meteomatics";
 import { moonAtStation } from "./moon";
 import { parseOpenMeteoDay } from "./openMeteo";
 import { parsePowerMonth } from "./power";
-import { rainRiskFromForecast, rainRiskFromTypical, weatherSentence } from "./rain";
+import { rainRiskFromForecast, rainRiskFromTypical, weatherSentence, groundStorm, hourSentence } from "./rain";
 import { isIsoDate, regimeForDate } from "./regime";
 import { STATIONS } from "./stations";
 import { parseSwpcForecast } from "./swpc";
@@ -16,6 +12,7 @@ import {
   type SpaceWeather,
   type Station,
   type StationWeather,
+  type HourWeather,
   type WeatherRegime,
 } from "./types";
 
@@ -107,6 +104,7 @@ function toWeather(
   sourceName: string,
   sourceUrl: string,
   values: DayValues,
+  hours: HourWeather[] = [],
 ): StationWeather {
   const rainRisk =
     regime === "forecast"
@@ -133,6 +131,7 @@ function toWeather(
       cloudCoverPercent: values.cloudCoverPercent,
       windSpeedMs: values.windSpeedMs,
     }),
+    hours,
   };
 }
 
@@ -177,9 +176,24 @@ async function meteomaticsWeather(
       },
     });
     if (!response.ok) return null;
-    const values = parseMeteomaticsDay(await response.json());
+    const payload = await response.json();
+    const values = parseMeteomaticsDay(payload);
     if (blank(values)) return null;
-    return toWeather(station, date, "forecast", "Meteomatics", url, values);
+    const hours = parseMeteomaticsHours(payload).map((hour) => {
+      const storm = groundStorm(hour);
+      return {
+        ...hour,
+        groundStorm: storm,
+        sentence: hourSentence({
+          name: station.name,
+          temperatureC: hour.temperatureC,
+          precipitationMm: hour.precipitationMm,
+          windSpeedMs: hour.windSpeedMs,
+          groundStorm: storm,
+        }),
+      };
+    });
+    return toWeather(station, date, "forecast", "Meteomatics", url, values, hours);
   } catch {
     return null;
   }

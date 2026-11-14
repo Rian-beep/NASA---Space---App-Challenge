@@ -33,6 +33,20 @@ export interface StationWeather {
   rainRisk: RainRisk;
   /** One or two short sentences. No promise that a radio call works. */
   sentence: string;
+  /** One entry per hour when the read is hourly. Empty for a monthly typical. */
+  hours: HourWeather[];
+}
+
+export interface HourWeather {
+  timeUtc: string;
+  temperatureC: number | null;
+  precipitationMm: number | null;
+  windSpeedMs: number | null;
+  gustSpeedMs: number | null;
+  cloudCoverPercent: number | null;
+  /** Heavy rain or a strong gust in this hour. Not a radio-link failure. */
+  groundStorm: boolean;
+  sentence: string;
 }
 
 export interface SpaceWeather {
