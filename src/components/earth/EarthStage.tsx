@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { STATIONS } from "../../../terrestrial/stations";
 import type { EarthDayReport, RainRisk, WeatherRegime } from "../../../terrestrial/types";
@@ -44,12 +45,12 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
           <p className="mt-1 text-pretty text-sm leading-6 text-stone-100">
             Weather at the three NASA listening sites, for the day you pick.
           </p>
-          <a
+          <Link
             href="/"
             className="mt-2 inline-block text-sm text-stone-100 underline decoration-stone-500 underline-offset-2"
           >
             Moon view
-          </a>
+          </Link>
         </header>
 
         <div className="min-w-0 bg-[#10131a] p-3">
