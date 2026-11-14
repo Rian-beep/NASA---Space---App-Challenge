@@ -19,7 +19,7 @@ import { MoonStage } from "@/components/globe/MoonStage";
 import type { GlobeMarker } from "@/components/globe/MoonGlobe";
 import { MISSIONS, missionById, scenarioPatchForMission } from "@/lib/sites/missions";
 import { ExportButtons } from "./ExportButtons";
-import { addHours, formatUtc, newId, scenarioProblem, siteCoordinates, siteLabel, statusPhrase } from "./format";
+import { addHours, newId, scenarioProblem, siteCoordinates, siteLabel, statusPhrase } from "./format";
 import { ArchiveIcon, WarningIcon } from "./icons";
 import { Inputs } from "./Inputs";
 import { MethodologyDrawer } from "./MethodologyDrawer";
@@ -505,15 +505,6 @@ export function Workspace() {
 
   const timeControl = bounds ? (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-stone-800">
-        Selected time{" "}
-        <time className="font-medium tabular-nums text-stone-950" dateTime={selectedTimeUtc}>
-          {formatUtc(selectedTimeUtc)}
-        </time>
-      </p>
-      <p className="text-sm leading-6 text-stone-700">
-        The marker reads the nearest computed sample. It does not recompute the sky.
-      </p>
       <TimelineFrame
         startUtc={bounds.startUtc}
         endUtc={bounds.endUtc}
@@ -530,6 +521,9 @@ export function Workspace() {
         valueUtc={selectedTimeUtc}
         onChange={setSelectedTimeUtc}
       />
+      <p className="text-sm leading-6 text-stone-700">
+        The marker reads the nearest computed sample. It does not recompute the sky.
+      </p>
     </div>
   ) : null;
 
@@ -577,20 +571,20 @@ export function Workspace() {
         </p>
       ) : null}
 
-      {mode === "analyze" ? (
-        <MethodologyDrawer
-          open={methodOpen}
-          provenance={activeResult?.provenance ?? null}
-          onToggle={() => setMethodOpen((open) => !open)}
-        />
-      ) : null}
-
-      {!skyReady ? <p className="text-sm leading-6 text-stone-800">{SKY_ONLY_PRACTICE}</p> : null}
-      {mode === "explore" ? (
-        <p className="text-xl font-medium leading-snug text-stone-950" aria-live="polite">
-          {sentence}
-        </p>
-      ) : null}
+      {skyReady ? (
+        <section className="flex flex-col gap-4" aria-label="Sky and ground">
+          {horizon}
+          {timeControl}
+          {map}
+          {mode === "explore" ? (
+            <p className="text-xl font-medium leading-snug text-stone-950" aria-live="polite">
+              {sentence}
+            </p>
+          ) : null}
+        </section>
+      ) : (
+        <p className="text-sm leading-6 text-stone-800">{SKY_ONLY_PRACTICE}</p>
+      )}
       <Inputs
         mode={mode}
         sites={sites}
@@ -613,9 +607,13 @@ export function Workspace() {
         onRemove={removeScenario}
         onRestore={restore}
       />
-      {skyReady ? horizon : null}
-      {timeControl}
-      {skyReady ? map : null}
+      {mode === "analyze" ? (
+        <MethodologyDrawer
+          open={methodOpen}
+          provenance={activeResult?.provenance ?? null}
+          onToggle={() => setMethodOpen((open) => !open)}
+        />
+      ) : null}
       {mode !== "explore" ? (
         <>
           <ComparisonPanel

@@ -187,7 +187,7 @@ export function LunarMap({
         </figure>
       ) : null}
 
-      <div className="mb-24 mt-6">
+      <div className="mb-4 mt-4">
         <div
           ref={frameRef}
           className="relative w-full"
@@ -246,7 +246,6 @@ export function LunarMap({
               selected={item.site.id === selectedSiteId}
               x={item.x}
               y={item.y}
-              mode={mode}
               onSelectSite={onSelectSite}
             />
           ))}
@@ -598,18 +597,15 @@ function SiteButton({
   selected,
   x,
   y,
-  mode,
   onSelectSite,
 }: {
   site: LunarSite;
   selected: boolean;
   x: number;
   y: number;
-  mode: AudienceMode;
   onSelectSite: (id: string) => void;
 }) {
   const example = site.kind === "example_analysis";
-  const explore = mode === "explore";
   return (
     <button
       type="button"
@@ -627,20 +623,6 @@ function SiteButton({
       style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
     >
       {selected ? <SelectedMark /> : <SiteMark />}
-      <span
-        className={`pointer-events-none absolute top-full left-1/2 mt-1 w-max max-w-[11rem] -translate-x-1/2 border border-stone-200 bg-stone-50 px-1.5 py-1 text-center text-stone-900 ${explore ? "text-sm" : "text-xs"}`}
-      >
-        <span className="block font-semibold leading-tight">{site.name}</span>
-        <span className="mt-0.5 block leading-tight text-stone-700">
-          {example ? "Practice spot" : "Place you entered"}
-        </span>
-        {selected ? <span className="mt-0.5 block font-semibold leading-tight">Selected</span> : null}
-        {mode === "analyze" ? (
-          <span className={`${measureClass} mt-0.5 block leading-tight text-stone-700`}>
-            {formatLatitude(site.latitudeDeg)} {formatLongitude(site.eastLongitudeDeg)}
-          </span>
-        ) : null}
-      </span>
     </button>
   );
 }
@@ -650,9 +632,7 @@ function SelectedReadout({ site, explore }: { site: LunarSite; explore: boolean 
   return (
     <div className="space-y-2">
       <p className={explore ? "text-lg font-semibold" : "font-semibold"}>
-        {site.name}
-        {example ? ", practice spot" : ", place you entered"}
-        , selected
+        {example ? "Practice spot" : "Place you entered"}
       </p>
       {site.summary ? <p className="max-w-[65ch] text-stone-800">{site.summary}</p> : null}
       <dl className={`grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 ${measureClass}`}>
