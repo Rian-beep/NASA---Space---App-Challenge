@@ -58,8 +58,8 @@ export function MoonStage({
   }, [markers, program, query]);
 
   return (
-    <div className="flex h-svh max-h-svh w-full flex-col overflow-hidden bg-[#07080d] lg:h-screen lg:max-h-screen lg:flex-row-reverse">
-      <div className="relative h-[34svh] w-full shrink-0 overflow-hidden lg:h-full lg:min-h-0 lg:w-auto lg:min-w-0 lg:flex-1">
+    <div className="flex w-full flex-col bg-[#07080d] lg:h-screen lg:max-h-screen lg:min-h-0 lg:flex-row-reverse lg:overflow-hidden">
+      <div className="relative h-56 w-full shrink-0 overflow-hidden lg:h-full lg:min-h-0 lg:w-auto lg:min-w-0 lg:flex-1">
         <MoonView
           markers={markers}
           selectedId={selectedId}
@@ -70,7 +70,7 @@ export function MoonStage({
       </div>
       <section
         aria-label="Find a place"
-        className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 overflow-y-auto border-t border-[#2c313c] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:h-full lg:w-[22rem] lg:flex-none lg:border-r lg:border-t-0 lg:p-4"
+        className="flex w-full min-w-0 flex-col gap-3 border-t border-[#2c313c] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:h-full lg:min-h-0 lg:w-[22rem] lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-t-0 lg:p-4"
       >
         <header className="shrink-0 bg-[#10131a] p-3">
           <h1 className="text-balance text-2xl font-semibold tracking-tight text-stone-50">Lunar Window</h1>
@@ -80,7 +80,7 @@ export function MoonStage({
         </header>
         <SelectedCard mission={mission} picked={picked} practice={practice} />
         <form
-          className="flex min-h-0 flex-1 flex-col gap-2 bg-[#10131a] p-3 text-stone-100"
+          className="flex flex-col gap-2 bg-[#10131a] p-3 text-stone-100 lg:min-h-0 lg:flex-1 lg:overflow-hidden"
           onSubmit={(event) => event.preventDefault()}
         >
           <div className="flex shrink-0 flex-col gap-2">
@@ -120,8 +120,14 @@ export function MoonStage({
               </label>
             </div>
           </div>
+          <p className="shrink-0 text-pretty text-xs leading-5 text-stone-300">
+            <a className="underline decoration-stone-500 underline-offset-2" href={MISSION_SOURCE_URL}>
+              NASA spacecraft list
+            </a>
+            . {MOON_IMAGE_CREDIT} Drag to turn. Scroll to move closer. Click empty ground for your own coordinates.
+          </p>
           <ul
-            className="min-h-[6rem] min-w-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#78716c_transparent]"
+            className="max-h-[45svh] min-w-0 overflow-y-auto overscroll-contain pb-1 [scrollbar-color:#78716c_transparent] lg:max-h-none lg:min-h-0 lg:flex-1"
             aria-label="Places on the Moon"
           >
             {practiceListed.map((marker) => (
@@ -148,12 +154,6 @@ export function MoonStage({
               <li className="px-1 py-2 text-sm text-stone-300">No mission matches that search.</li>
             ) : null}
           </ul>
-          <p className="shrink-0 text-pretty text-xs leading-5 text-stone-300">
-            <a className="underline decoration-stone-500 underline-offset-2" href={MISSION_SOURCE_URL}>
-              NASA spacecraft list
-            </a>
-            . {MOON_IMAGE_CREDIT} Drag to turn. Scroll to move closer. Click empty ground for your own coordinates.
-          </p>
         </form>
       </section>
     </div>
@@ -174,7 +174,7 @@ function SelectedCard({
   const lon = mission?.eastLongitudeDeg ?? picked?.eastLongitudeDeg;
   return (
     <div className="min-w-0 shrink-0 bg-[#10131a] p-3 text-stone-100">
-      <p className="text-lg font-semibold leading-snug">{name}</p>
+      <p className="text-pretty text-lg font-semibold leading-snug">{name}</p>
       {mission ? (
         <p className="mt-1 text-sm leading-6 text-stone-200">
           {outcomePhrase(mission.outcome)}
@@ -223,7 +223,7 @@ function PlaceButton({
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className={`block w-full px-1 py-1.5 text-left ${pressed ? "bg-stone-100 text-stone-950" : "text-stone-100 hover:bg-[#1c2230]"}`}
+      className={`block w-full min-w-0 px-1 py-1.5 text-left ${pressed ? "bg-stone-100 text-stone-950" : "text-stone-100 hover:bg-[#1c2230]"}`}
     >
       <span className="block text-sm font-medium">{title}</span>
       <span className={`block text-xs leading-5 ${pressed ? "text-stone-700" : "text-stone-300"}`}>{detail}</span>

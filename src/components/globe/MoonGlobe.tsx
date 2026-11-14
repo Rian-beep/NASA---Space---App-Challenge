@@ -155,7 +155,7 @@ function MarkerPin({
   }
 
   return (
-    <group ref={group} position={surface}>
+    <group ref={group} position={[surface.x, surface.y, surface.z]}>
       <mesh raycast={() => undefined}>
         <sphereGeometry args={[0.5, 12, 8]} />
         <meshBasicMaterial color={selected ? "#fffef8" : TONE_COLOR[marker.tone]} />
@@ -232,6 +232,7 @@ function FlyCamera({ focus, focusId }: { focus: [number, number, number] | null;
       onEnd={() => {
         const camera = cameraRef.current;
         if (!camera || !overview.current || flying.current) return;
+        if (overviewPosition.current.lengthSq() < 1) return;
         if (camera.position.distanceTo(overviewPosition.current) > 0.12) overview.current = false;
       }}
     />
