@@ -252,9 +252,9 @@ export function EarthStage({ date, onDate, loading, error, report }: EarthStageP
 
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
           <p>
-            NASA Blue Marble covers the whole globe. On a day that already happened, the sunlit part is a NASA
-            VIIRS satellite picture from that day. The satellite does not photograph the whole Earth at once, so
-            the rest stays Blue Marble.
+            NASA Blue Marble covers the whole globe. On a day that already happened, the sunlit Earth is filled
+            from that day&apos;s NASA satellite passes. Where it was night, there is no daylight photo, so Blue
+            Marble stays.
           </p>
           <p>
             {sourceLine(report)} A future date beyond the forecast uses NASA daily records for that month and day,

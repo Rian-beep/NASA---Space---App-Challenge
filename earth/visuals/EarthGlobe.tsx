@@ -136,14 +136,12 @@ function SatelliteSkin({ url }: { url: string }) {
           #ifdef USE_MAP
             vec4 baseTexel = texture2D(map, vMapUv);
             vec4 satTexel = texture2D(satMap, vMapUv);
-            float lum = dot(satTexel.rgb, vec3(0.2126, 0.7152, 0.0722));
-            float live = smoothstep(0.001, 0.012, lum);
-            diffuseColor *= mix(baseTexel, satTexel, live);
+            diffuseColor *= mix(baseTexel, vec4(satTexel.rgb, 1.0), satTexel.a);
           #endif
           `,
         );
     };
-    mat.customProgramCacheKey = () => "earth-live-satellite";
+    mat.customProgramCacheKey = () => "earth-live-satellite-cover";
     return mat;
   }, [base, satellite]);
 
