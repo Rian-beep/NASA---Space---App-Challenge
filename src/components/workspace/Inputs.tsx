@@ -16,7 +16,6 @@ import {
   datetimeLocalValueToIso,
   formatHours,
   isoToDatetimeLocalValue,
-  siteLabel,
 } from "./format";
 import { StatusMark } from "./StatusMark";
 
@@ -45,12 +44,11 @@ type InputsProps = {
 
 export function Inputs(props: InputsProps) {
   const { mode, active, sites } = props;
-  const place = sites.find((site) => site.id === active.siteId) ?? null;
   const atLimit = props.scenarios.length >= props.maxScenarios;
 
   return (
     <form
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-5"
       onSubmit={(event) => event.preventDefault()}
     >
       {mode !== "explore" ? (
@@ -58,10 +56,8 @@ export function Inputs(props: InputsProps) {
       ) : null}
 
       <PlaceFields
-        mode={mode}
         sites={sites}
         scenario={active}
-        placeSummary={place?.summary ?? null}
         onChange={props.onChangeActive}
       />
 
@@ -170,26 +166,18 @@ function CaseList({
 }
 
 function PlaceFields({
-  mode,
   sites,
   scenario,
-  placeSummary,
   onChange,
 }: {
-  mode: AudienceMode;
   sites: LunarSite[];
   scenario: ScenarioInput;
-  placeSummary: string | null;
   onChange: (patch: Partial<ScenarioInput>) => void;
 }) {
   const selectId = useId();
   const custom = scenario.siteId === "custom";
   return (
-    <fieldset className="flex flex-col gap-3">
-      <legend className="text-sm font-semibold text-stone-950">
-        {mode === "explore" ? "Example place" : "Place"}
-      </legend>
-      <p className="text-sm leading-6 text-stone-700">{EXAMPLE_SITE_NOTE}</p>
+    <div className="flex flex-col gap-2">
       <label className="flex flex-col gap-1 text-sm" htmlFor={selectId}>
         <span className="font-medium text-stone-900">Place</span>
         <select
@@ -240,10 +228,10 @@ function PlaceFields({
           <option value="custom">Coordinates I enter</option>
         </select>
       </label>
-      {placeSummary ? <p className="text-sm leading-6 text-stone-700">{placeSummary}</p> : null}
+      <p className="text-sm leading-6 text-stone-700">{EXAMPLE_SITE_NOTE}</p>
       {custom ? <CustomCoordinates scenario={scenario} onChange={onChange} /> : null}
       {!custom && scenario.siteId ? <CoordinateReadout scenario={scenario} sites={sites} /> : null}
-    </fieldset>
+    </div>
   );
 }
 
@@ -254,8 +242,7 @@ function CoordinateReadout({ scenario, sites }: { scenario: ScenarioInput; sites
   const height = "surfaceHeightM" in point ? point.surfaceHeightM : 0;
   return (
     <p className="text-sm leading-6 text-stone-700 tabular-nums">
-      {siteLabel(scenario, sites)} · {point.eastLongitudeDeg}° east longitude · {point.latitudeDeg}° latitude ·{" "}
-      {height} m surface height
+      {point.eastLongitudeDeg}° east longitude · {point.latitudeDeg}° latitude · {height} m surface height
     </p>
   );
 }
