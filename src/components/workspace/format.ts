@@ -92,16 +92,26 @@ export function siteLabel(scenario: ScenarioInput, sites: LunarSite[]): string {
     const name = scenario.customSite?.name?.trim();
     return name || "Custom location";
   }
-  return sites.find((site) => site.id === scenario.siteId)?.name ?? "this place";
+  return (
+    sites.find((site) => site.id === scenario.siteId)?.name ??
+    scenario.customSite?.name?.trim() ??
+    scenario.name ??
+    "this place"
+  );
 }
 
 export function siteCoordinates(
   scenario: ScenarioInput,
   sites: LunarSite[],
 ): { eastLongitudeDeg: number; latitudeDeg: number; surfaceHeightM: number } | null {
-  if (scenario.siteId === "custom") {
+  const listed = sites.find((item) => item.id === scenario.siteId);
+  if (scenario.siteId === "custom" || !listed) {
     const site = scenario.customSite;
-    if (!site) return null;
+    if (!site) return listed ? {
+      eastLongitudeDeg: listed.eastLongitudeDeg,
+      latitudeDeg: listed.latitudeDeg,
+      surfaceHeightM: listed.surfaceHeightM,
+    } : null;
     if (!Number.isFinite(site.eastLongitudeDeg) || !Number.isFinite(site.latitudeDeg)) {
       return null;
     }
@@ -111,7 +121,7 @@ export function siteCoordinates(
       surfaceHeightM: site.surfaceHeightM,
     };
   }
-  const site = sites.find((item) => item.id === scenario.siteId);
+  const site = listed;
   if (!site) return null;
   return {
     eastLongitudeDeg: site.eastLongitudeDeg,

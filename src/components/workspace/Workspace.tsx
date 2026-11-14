@@ -14,7 +14,10 @@ import type {
 } from "@/lib/science/types";
 import { AlternativesPanel } from "./AlternativesPanel";
 import { ComparisonPanel } from "./ComparisonPanel";
-import { PRESENTATION_BADGE, SCIENCE_NOT_READY } from "./copy";
+import { PRESENTATION_BADGE, SCIENCE_NOT_READY, SKY_ONLY_PRACTICE } from "./copy";
+import { MoonStage } from "@/components/globe/MoonStage";
+import type { GlobeMarker } from "@/components/globe/MoonGlobe";
+import { MISSIONS, missionById, scenarioPatchForMission } from "@/lib/sites/missions";
 import { ExportButtons } from "./ExportButtons";
 import { addHours, formatUtc, newId, scenarioProblem, siteCoordinates, siteLabel, statusPhrase } from "./format";
 import { ArchiveIcon, WarningIcon } from "./icons";
@@ -145,22 +148,24 @@ export function Workspace() {
       void (async () => {
         setAnalyzing(true);
         try {
+          const savedSky = (scenario: ScenarioInput) =>
+            bundle.sites.some((site) => site.id === scenario.siteId) && !scenarioProblem(scenario);
           const baseline = scenarios.find((scenario) => scenario.isBaseline) ?? scenarios[0];
           const next: Record<string, ScenarioResult> = {};
           const nextHorizons: Record<string, TerrainHorizon | null> = {};
           let baselineResult: ScenarioResult | null = null;
-          if (baseline && !scenarioProblem(baseline)) {
+          if (baseline && savedSky(baseline)) {
             baselineResult = await analyzeWithScience(baseline, { bundle });
             next[baseline.id] = baselineResult;
             nextHorizons[baseline.id] = await horizonForScenario(baseline, bundle);
           }
           for (const scenario of scenarios) {
             if (!baseline || scenario.id === baseline.id) continue;
-            if (scenarioProblem(scenario)) continue;
+            if (!savedSky(scenario)) continue;
             next[scenario.id] = await analyzeWithScience(scenario, {
               bundle,
               baselineResult,
-              baselineScenario: baseline,
+              baselineScenario: baseline && savedSky(baseline) ? baseline : undefined,
             });
             nextHorizons[scenario.id] = await horizonForScenario(scenario, bundle);
           }
@@ -318,7 +323,31 @@ export function Workspace() {
 
   function selectSite(siteId: string) {
     if (!sites.some((site) => site.id === siteId)) return;
-    patchActive({ siteId, customSite: undefined });
+    const place = sites.find((site) => site.id === siteId);
+    patchActive({ siteId, name: place?.name ?? active?.name, customSite: undefined });
+  }
+
+  function selectPlace(id: string) {
+    if (sites.some((site) => site.id === id)) {
+      selectSite(id);
+      return;
+    }
+    const mission = missionById(id);
+    if (!mission) return;
+    patchActive(scenarioPatchForMission(mission));
+  }
+
+  function pickCoordinates(latitudeDeg: number, eastLongitudeDeg: number) {
+    patchActive({
+      siteId: "custom",
+      name: "Place on the Moon",
+      customSite: {
+        name: "Place on the Moon",
+        latitudeDeg,
+        eastLongitudeDeg,
+        surfaceHeightM: 0,
+      },
+    });
   }
 
   async function findAlternatives() {
@@ -418,6 +447,33 @@ export function Workspace() {
       : null;
   const shownAlternatives =
     alternatives && alternativesKey && searchKey(active) === alternativesKey ? alternatives : null;
+  const skyReady = sites.some((site) => site.id === active.siteId);
+  const globeMarkers: GlobeMarker[] = sites.map((site) => ({
+    id: site.id,
+    name: site.name,
+    latitudeDeg: site.latitudeDeg,
+    eastLongitudeDeg: site.eastLongitudeDeg,
+    tone: "practice" as const,
+  }));
+  for (const mission of MISSIONS) {
+    globeMarkers.push({
+      id: mission.id,
+      name: mission.name,
+      latitudeDeg: mission.latitudeDeg,
+      eastLongitudeDeg: mission.eastLongitudeDeg,
+      tone: mission.outcome === "impact" ? "impact" : "landing",
+    });
+  }
+  if (active.siteId === "custom" && coordinates) {
+    globeMarkers.push({
+      id: "custom",
+      name: active.customSite?.name?.trim() || "Place on the Moon",
+      latitudeDeg: coordinates.latitudeDeg,
+      eastLongitudeDeg: coordinates.eastLongitudeDeg,
+      tone: "picked",
+    });
+  }
+  const practiceIds = new Set(sites.map((site) => site.id));
 
   const map = (
     <MapFrame
@@ -478,15 +534,23 @@ export function Workspace() {
   ) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[90rem] flex-col gap-4 px-4 py-4 md:px-6">
-      <a href="#workspace-body" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:bg-white focus:px-3 focus:py-2">
+    <main className="min-h-screen bg-[#07080d] lg:grid lg:h-screen lg:grid-cols-[minmax(0,1fr)_26rem]">
+      <a href="#workspace-body" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:bg-white focus:px-3 focus:py-2">
         Skip to the workspace
       </a>
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-300 pb-4">
+      <MoonStage
+        markers={globeMarkers}
+        selectedId={active.siteId}
+        practiceIds={practiceIds}
+        onSelect={selectPlace}
+        onPickCoordinates={pickCoordinates}
+      />
+      <aside id="workspace-body" className="bg-stone-100 text-stone-950 lg:h-screen lg:overflow-y-auto">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-300 px-4 py-4">
         <div className="max-w-xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-950">Lunar Window</h1>
+          <p className="text-lg font-semibold tracking-tight text-stone-950">Sunlight and a view of Earth</p>
           <p className="mt-1 text-sm leading-6 text-stone-700">
-            A planning tool for sunlight and a clear view of Earth near the Moon’s south pole. Not a flight check, and not an approval to land.
+            The check below uses saved sky and ground data. It is not a flight check, and not an approval to land.
           </p>
         </div>
         <div className="flex flex-col items-start gap-3 sm:items-end">
@@ -497,6 +561,7 @@ export function Workspace() {
           </p>
         </div>
       </header>
+      <div className="flex flex-col gap-4 px-4 py-4">
 
       {analysisError ? (
         <p role="alert" className="flex items-start gap-2 text-sm leading-6 text-stone-900">
@@ -520,112 +585,76 @@ export function Workspace() {
         />
       ) : null}
 
-      <div id="workspace-body">
-        {mode === "explore" ? (
-          <div className="flex flex-col gap-4">
-            <div className="grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
-              <Inputs
-                mode={mode}
-                sites={sites}
-                scenarios={scenarios}
-                active={active}
-                results={results}
-                maxScenarios={maxScenarios}
-                exploreDelayHours={exploreDelayHours}
-                planDelayHours={planDelayHours}
-                demoDelay={delayed ? { name: delayed.name, arrivalUtc: delayed.arrivalUtc } : null}
-                demoDelayAdded={delayed ? scenarios.some((scenario) => scenario.id === delayed.id) : false}
-                onSelectScenario={selectScenario}
-                onChangeActive={patchActive}
-                onExploreArrival={handleExploreArrival}
-                onExploreDelayHours={handleExploreDelay}
-                onPlanDelayHours={setPlanDelayHours}
-                onApplyDelay={applyDelay}
-                onUseDemoDelay={useDemoDelay}
-                onDuplicate={duplicate}
-                onRemove={removeScenario}
-                onRestore={restore}
-              />
-              <div className="flex flex-col gap-3">
-                <p className="max-w-[40rem] text-2xl font-medium leading-snug text-stone-950" aria-live="polite">
-                  {sentence}
-                </p>
-                {horizon}
-                <IceProspectivityCard context={lfmContexts[active.siteId] ?? null} mode={mode} />
-              </div>
-            </div>
-            {timeControl}
-            {map}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)_minmax(16rem,22rem)]">
-              <Inputs
-                mode={mode}
-                sites={sites}
-                scenarios={scenarios}
-                active={active}
-                results={results}
-                maxScenarios={maxScenarios}
-                exploreDelayHours={exploreDelayHours}
-                planDelayHours={planDelayHours}
-                demoDelay={delayed ? { name: delayed.name, arrivalUtc: delayed.arrivalUtc } : null}
-                demoDelayAdded={delayed ? scenarios.some((scenario) => scenario.id === delayed.id) : false}
-                onSelectScenario={selectScenario}
-                onChangeActive={patchActive}
-                onExploreArrival={handleExploreArrival}
-                onExploreDelayHours={handleExploreDelay}
-                onPlanDelayHours={setPlanDelayHours}
-                onApplyDelay={applyDelay}
-                onUseDemoDelay={useDemoDelay}
-                onDuplicate={duplicate}
-                onRemove={removeScenario}
-                onRestore={restore}
-              />
-              <div className="flex flex-col gap-4">
-                {map}
-                {horizon}
-              </div>
-              <div className="flex flex-col gap-5">
-                <ComparisonPanel
-                  sites={sites}
-                  scenarios={scenarios}
-                  results={results}
-                  activeScenarioId={active.id}
-                  snapshot={snapshot}
-                  onSelectScenario={selectScenario}
-                />
-                <AlternativesPanel
-                  search={shownAlternatives}
-                  loading={alternativesLoading}
-                  error={alternativesError}
-                  showReasons={showReasons}
-                  replaceName={replaceName}
-                  disabled={Boolean(problem)}
-                  onToggleReasons={() => setShowReasons((value) => !value)}
-                  onFind={() => void findAlternatives()}
-                  onApply={applyAlternative}
-                />
-                <IceProspectivityCard context={lfmContexts[active.siteId] ?? null} mode={mode} />
-                <ExportButtons
-                  scenarios={scenarios}
-                  results={scenarios.flatMap((scenario) => (results[scenario.id] ? [results[scenario.id]] : []))}
-                  alternatives={shownAlternatives}
-                  mode={mode}
-                  softwareVersion={meta.softwareVersion}
-                  disclaimer={meta.disclaimer}
-                  sites={sites}
-                />
-              </div>
-            </div>
-            {timeControl}
-          </div>
-        )}
-      </div>
+      {!skyReady ? <p className="text-sm leading-6 text-stone-800">{SKY_ONLY_PRACTICE}</p> : null}
+      {mode === "explore" ? (
+        <p className="text-xl font-medium leading-snug text-stone-950" aria-live="polite">
+          {sentence}
+        </p>
+      ) : null}
+      <Inputs
+        mode={mode}
+        sites={sites}
+        scenarios={scenarios}
+        active={active}
+        results={results}
+        maxScenarios={maxScenarios}
+        exploreDelayHours={exploreDelayHours}
+        planDelayHours={planDelayHours}
+        demoDelay={delayed ? { name: delayed.name, arrivalUtc: delayed.arrivalUtc } : null}
+        demoDelayAdded={delayed ? scenarios.some((scenario) => scenario.id === delayed.id) : false}
+        onSelectScenario={selectScenario}
+        onChangeActive={patchActive}
+        onExploreArrival={handleExploreArrival}
+        onExploreDelayHours={handleExploreDelay}
+        onPlanDelayHours={setPlanDelayHours}
+        onApplyDelay={applyDelay}
+        onUseDemoDelay={useDemoDelay}
+        onDuplicate={duplicate}
+        onRemove={removeScenario}
+        onRestore={restore}
+      />
+      {skyReady ? horizon : null}
+      {timeControl}
+      {skyReady ? map : null}
+      {mode !== "explore" ? (
+        <>
+          <ComparisonPanel
+            sites={sites}
+            scenarios={scenarios}
+            results={results}
+            activeScenarioId={active.id}
+            snapshot={snapshot}
+            onSelectScenario={selectScenario}
+          />
+          <AlternativesPanel
+            search={shownAlternatives}
+            loading={alternativesLoading}
+            error={alternativesError}
+            showReasons={showReasons}
+            replaceName={replaceName}
+            disabled={Boolean(problem) || !skyReady}
+            onToggleReasons={() => setShowReasons((value) => !value)}
+            onFind={() => void findAlternatives()}
+            onApply={applyAlternative}
+          />
+          <ExportButtons
+            scenarios={scenarios}
+            results={scenarios.flatMap((scenario) => (results[scenario.id] ? [results[scenario.id]] : []))}
+            alternatives={shownAlternatives}
+            mode={mode}
+            softwareVersion={meta.softwareVersion}
+            disclaimer={meta.disclaimer}
+            sites={sites}
+          />
+        </>
+      ) : null}
+      <IceProspectivityCard context={lfmContexts[active.siteId] ?? null} mode={mode} />
 
       <footer className="mt-2 border-t border-stone-300 pt-4 text-sm leading-6 text-stone-700">
         <p>{meta.disclaimer}</p>
-        <p className="mt-1">Version {meta.softwareVersion}. Global terrain is outside this release.</p>
+        <p className="mt-1">
+          Version {meta.softwareVersion}. The ground line and the sky check cover the three practice spots. The Moon picture is global.
+        </p>
         {activeResult ? (
           <p className="mt-1">
             <a className="underline decoration-stone-400 underline-offset-2" href={activeResult.provenance.horizonsDocUrl}>
@@ -638,6 +667,8 @@ export function Workspace() {
           </p>
         ) : null}
       </footer>
+      </div>
+      </aside>
     </main>
   );
 }
