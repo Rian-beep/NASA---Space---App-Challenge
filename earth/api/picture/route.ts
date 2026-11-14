@@ -1,3 +1,5 @@
+import { decode } from "jpeg-js";
+import { DAYLIGHT_LAYERS, buildDaylightMosaic, daylightUrl, encodeRgbaPng } from "../../data/earthPicture";
 import { isIsoDate } from "../../data/regime";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +10,8 @@ const CACHE_MS = 60 * 60 * 1000;
 const cache = new Map<string, { storedAt: number; body: Uint8Array }>();
 
 /**
- * NASA GIBS VIIRS true-color snapshot for one day.
- * Clouds and storms are in the picture. A future day has no satellite photo yet.
+ * The sunlit Earth for one day, joined from NASA's daylight satellite passes.
+ * A future day has no satellite photo yet. The night side is left open.
  */
 export async function GET(request: Request) {
   const date = new URL(request.url).searchParams.get("date") ?? "";
@@ -22,40 +24,43 @@ export async function GET(request: Request) {
   }
 
   const hit = cache.get(date);
-  if (hit && Date.now() - hit.storedAt < CACHE_MS) {
-    return jpeg(hit.body);
-  }
-
-  const url =
-    "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi" +
-    "?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0" +
-    "&LAYERS=VIIRS_NOAA20_CorrectedReflectance_TrueColor" +
-    "&FORMAT=image/jpeg&CRS=EPSG:4326&BBOX=-90,-180,90,180" +
-    `&WIDTH=${WIDTH}&HEIGHT=${HEIGHT}&TIME=${date}`;
+  if (hit && Date.now() - hit.storedAt < CACHE_MS) return png(hit.body);
 
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-    if (!response.ok) return new Response("NASA picture unavailable.", { status: 502 });
-    const body = new Uint8Array(await response.arrayBuffer());
-    if (body.length < 4 || body[0] !== 0xff || body[1] !== 0xd8) {
-      return new Response("NASA picture unavailable.", { status: 502 });
-    }
+    const frames = await Promise.all(DAYLIGHT_LAYERS.map((layer) => readLayer(layer, date)));
+    const present = frames.filter((frame): frame is Uint8Array => frame !== null);
+    if (present.length === 0) return new Response("NASA picture unavailable.", { status: 502 });
+    const body = encodeRgbaPng(buildDaylightMosaic(present, WIDTH, HEIGHT), WIDTH, HEIGHT);
     cache.set(date, { storedAt: Date.now(), body });
     while (cache.size > 6) {
       const oldest = cache.keys().next().value;
       if (oldest === undefined) break;
       cache.delete(oldest);
     }
-    return jpeg(body);
+    return png(body);
   } catch {
     return new Response("NASA picture unavailable.", { status: 502 });
   }
 }
 
-function jpeg(body: Uint8Array): Response {
+async function readLayer(layer: (typeof DAYLIGHT_LAYERS)[number], date: string): Promise<Uint8Array | null> {
+  try {
+    const response = await fetch(daylightUrl(layer, date, WIDTH, HEIGHT), { signal: AbortSignal.timeout(25_000) });
+    if (!response.ok) return null;
+    const body = new Uint8Array(await response.arrayBuffer());
+    if (body.length < 4 || body[0] !== 0xff || body[1] !== 0xd8) return null;
+    const image = decode(body, { useTArray: true, formatAsRGBA: true, tolerantDecoding: true });
+    if (image.width !== WIDTH || image.height !== HEIGHT) return null;
+    return image.data;
+  } catch {
+    return null;
+  }
+}
+
+function png(body: Uint8Array): Response {
   return new Response(Buffer.from(body), {
     headers: {
-      "Content-Type": "image/jpeg",
+      "Content-Type": "image/png",
       "Cache-Control": "public, max-age=1800",
     },
   });
