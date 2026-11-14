@@ -10,6 +10,7 @@ import {
   Group,
   LinearSRGBColorSpace,
   Mesh,
+  RepeatWrapping,
   TextureLoader,
   type Texture,
 } from "three";
@@ -53,59 +54,59 @@ const SUN_FRAGMENT = `
   }
 `;
 
-/** Paint the flat NASA disk onto the sphere's own surface, front hemisphere only. */
-function paintSolarSurface(source: Texture): CanvasTexture {
+/** Crop the NASA chart to the solar map and stretch it over the whole sphere. */
+function fullSurfaceTexture(source: Texture): CanvasTexture {
   const image = source.image as CanvasImageSource & { width: number; height: number };
-  const width = 1024;
-  const height = 512;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("Sun surface unavailable");
   const scratch = document.createElement("canvas");
   scratch.width = image.width;
   scratch.height = image.height;
   const scratchCtx = scratch.getContext("2d", { willReadFrequently: true });
   if (!scratchCtx) throw new Error("Sun surface unavailable");
   scratchCtx.drawImage(image, 0, 0);
-  const src = scratchCtx.getImageData(0, 0, scratch.width, scratch.height).data;
-  const frame = ctx.createImageData(width, height);
-  const dst = frame.data;
-  for (let y = 0; y < height; y += 1) {
-    const theta = (y / (height - 1)) * Math.PI;
-    const sinT = Math.sin(theta);
-    const cosT = Math.cos(theta);
-    for (let x = 0; x < width; x += 1) {
-      const phi = (x / (width - 1)) * Math.PI * 2;
-      const px = -sinT * Math.cos(phi);
-      const py = cosT;
-      const pz = sinT * Math.sin(phi);
-      const grain = ((x * 13 + y * 7) % 17) / 17;
-      let r = 214 + grain * 18;
-      let g = 126 + grain * 10;
-      let b = 48;
-      if (pz > 0.04) {
-        const su = 0.5 + px * 0.42;
-        const sv = 0.5 - py * 0.42;
-        const sx = Math.min(scratch.width - 1, Math.max(0, Math.round(su * (scratch.width - 1))));
-        const sy = Math.min(scratch.height - 1, Math.max(0, Math.round(sv * (scratch.height - 1))));
-        const i = (sy * scratch.width + sx) * 4;
-        const fade = Math.min(1, (pz - 0.04) / 0.16);
-        r = (src[i] ?? 0) * fade + r * (1 - fade);
-        g = (src[i + 1] ?? 0) * fade + g * (1 - fade);
-        b = (src[i + 2] ?? 0) * fade + b * (1 - fade);
-      }
-      const o = (y * width + x) * 4;
-      dst[o] = r;
-      dst[o + 1] = g;
-      dst[o + 2] = b;
-      dst[o + 3] = 255;
+  const pixels = scratchCtx.getImageData(0, 0, scratch.width, scratch.height).data;
+  let minX = scratch.width;
+  let minY = scratch.height;
+  let maxX = 0;
+  let maxY = 0;
+  for (let y = 0; y < scratch.height; y += 1) {
+    for (let x = 0; x < scratch.width; x += 1) {
+      const i = (y * scratch.width + x) * 4;
+      const r = pixels[i] ?? 0;
+      const g = pixels[i + 1] ?? 0;
+      const b = pixels[i + 2] ?? 0;
+      if (r > 248 && g > 248 && b > 248) continue;
+      if (r < 12 && g < 12 && b < 12) continue;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
     }
   }
-  ctx.putImageData(frame, 0, 0);
+  minX += 2;
+  maxX -= 2;
+  minY += 8;
+  maxY -= 6;
+  if (maxX - minX < 32 || maxY - minY < 32) throw new Error("Sun surface unavailable");
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Sun surface unavailable");
+  ctx.drawImage(
+    scratch,
+    minX,
+    minY,
+    maxX - minX + 1,
+    maxY - minY + 1,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
   const map = new CanvasTexture(canvas);
   map.colorSpace = LinearSRGBColorSpace;
+  map.wrapS = RepeatWrapping;
   map.anisotropy = 8;
   map.needsUpdate = true;
   return map;
@@ -133,8 +134,8 @@ export function SunGlobe({ scale, reducedMotion }: SunGlobeProps) {
 
 function SunPhoto({ reducedMotion }: { reducedMotion: boolean }) {
   const mesh = useRef<Mesh>(null);
-  const texture = useLoader(TextureLoader, "/api/sun/picture");
-  const surface = useMemo(() => paintSolarSurface(texture), [texture]);
+  const texture = useLoader(TextureLoader, "/api/sun/surface");
+  const surface = useMemo(() => fullSurfaceTexture(texture), [texture]);
 
   useFrame((_, delta) => {
     if (!mesh.current || reducedMotion) return;
