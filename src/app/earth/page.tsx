@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { EarthStage } from "@/components/earth/EarthStage";
 import type { EarthDayReport } from "../../../terrestrial/types";
 
-const PRACTICE_ARRIVAL = "2026-12-05";
+function utcToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
@@ -25,7 +27,7 @@ function isEarthDayReport(body: unknown): body is EarthDayReport {
 }
 
 export default function EarthPage() {
-  const [date, setDate] = useState(PRACTICE_ARRIVAL);
+  const [date, setDate] = useState(utcToday);
   const [report, setReport] = useState<EarthDayReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
