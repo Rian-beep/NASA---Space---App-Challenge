@@ -88,7 +88,7 @@ export function SunStage({ loading, error, report }: SunStageProps) {
               <p className="mt-2 text-pretty text-sm leading-6 text-stone-100">{report.caveat}</p>
               <h2 className="mt-4 text-sm font-medium text-stone-100">Latest NASA photo</h2>
               <p className="mt-1 text-pretty text-sm leading-6 text-stone-100">
-                Bright patches are hot gas. This is the side facing Earth right now. The sphere uses a map of the whole surface.
+                Bright patches are hot gas. This is the side facing Earth right now. The sphere uses a full-resolution map of the whole surface.
               </p>
               {photoFailed ? (
                 <p className="mt-2 text-sm leading-6 text-stone-100">The NASA photo did not load.</p>
@@ -125,8 +125,8 @@ export function SunStage({ loading, error, report }: SunStageProps) {
         <footer className="min-w-0 text-pretty text-xs leading-5 text-stone-100">
           <p>Drag the sphere to turn it. The whole surface is on the ball. The glow follows the live flare class.</p>
           <p>
-            Flares are from NOAA GOES. The surface map is NASA SDO AIA 193, built over one turn of the Sun, about 27
-            days. One photo cannot see the far side.
+            Flares are from NOAA GOES. The surface map is NASA&apos;s full-resolution SDO AIA 193 picture of one solar
+            turn, about 27 days. One photo cannot see the far side.
           </p>
         </footer>
       </section>

@@ -1,4 +1,5 @@
-import { carringtonMapUrl, carringtonRotations } from "../../../../../terrestrial/sunSurface";
+import { solarSurfacePng } from "../../../../../terrestrial/sunMap";
+import { carringtonFitsUrl, carringtonMapUrl, carringtonRotations } from "../../../../../terrestrial/sunSurface";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,11 @@ export async function GET() {
     const page = await fetch(PAGE_URL, { signal: AbortSignal.timeout(20_000) });
     if (!page.ok) return new Response("NASA surface map unavailable.", { status: 502 });
     const rotations = carringtonRotations(await page.text());
+    const detailed = await readDetailedMap(rotations);
+    if (detailed) {
+      cache = { storedAt: Date.now(), body: detailed };
+      return png(detailed);
+    }
     for (const rotation of rotations) {
       const response = await fetch(carringtonMapUrl(rotation), { signal: AbortSignal.timeout(20_000) });
       if (!response.ok) continue;
@@ -45,6 +51,21 @@ export async function GET() {
   } catch {
     return new Response("NASA surface map unavailable.", { status: 502 });
   }
+}
+
+async function readDetailedMap(rotations: string[]): Promise<Uint8Array | null> {
+  for (const rotation of rotations) {
+    try {
+      const response = await fetch(carringtonFitsUrl(rotation), { signal: AbortSignal.timeout(45_000) });
+      if (!response.ok) continue;
+      const body = new Uint8Array(await response.arrayBuffer());
+      if (body.length < 2880 || body[0] !== 0x53) continue;
+      return solarSurfacePng(body);
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 function png(body: Uint8Array): Response {
