@@ -1,0 +1,17 @@
+NASA public-domain Blue Marble, 2002. Reto Stöckli, NASA Goddard Space Flight Center. Robert Simmon, enhancements. MODIS, USGS, NOAA.
+
+The eoimages.gsfc.nasa.gov hosts timed out from this environment. These are the same 2048 files from the NASA Earth Observatory Blue Marble page.
+
+Land surface, shallow water, and shaded topography
+Working URL: https://assets.science.nasa.gov/content/dam/science/esd/eo/content-feature/bluemarble/images/land_shallow_topo_2048.jpg
+Visible Earth record: https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg
+Page: https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/
+Visible Earth: https://visibleearth.nasa.gov/view.php?id=57752
+Saved as public/earth/blue-marble.jpg (2048x1024 JPEG).
+
+Clouds
+Working URL: https://assets.science.nasa.gov/content/dam/science/esd/eo/content-feature/bluemarble/images/cloud_combined_2048.jpg
+Visible Earth record: https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57747/cloud_combined_2048.jpg
+Visible Earth: https://visibleearth.nasa.gov/view.php?id=57747
+Saved as public/earth/clouds.jpg (2048x1024 JPEG).
+This cloud picture is a static NASA mosaic. It is not a forecast for the selected date.
