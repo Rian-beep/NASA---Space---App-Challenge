@@ -1,13 +1,16 @@
 "use client";
 
 import { OrbitControls, Stars } from "@react-three/drei";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, useMemo, useRef, type ReactNode } from "react";
 import {
   AdditiveBlending,
   CanvasTexture,
+  ClampToEdgeWrapping,
   Color,
   Group,
+  LinearFilter,
+  LinearMipmapLinearFilter,
   LinearSRGBColorSpace,
   Mesh,
   RepeatWrapping,
@@ -54,23 +57,36 @@ const SUN_FRAGMENT = `
   }
 `;
 
-/** Crop the NASA chart to the solar map and stretch it over the whole sphere. */
-function fullSurfaceTexture(source: Texture): CanvasTexture {
+/** Use the full-resolution map. A labelled NASA chart is cropped to the solar picture first. */
+function fullSurfaceTexture(source: Texture): Texture {
   const image = source.image as CanvasImageSource & { width: number; height: number };
+  const width = image.width;
+  const height = image.height;
+  if (!width || !height) throw new Error("Sun surface unavailable");
+  const probe = document.createElement("canvas");
+  probe.width = 1;
+  probe.height = 1;
+  const probeCtx = probe.getContext("2d", { willReadFrequently: true });
+  if (!probeCtx) throw new Error("Sun surface unavailable");
+  probeCtx.drawImage(image, 0, 0, 1, 1, 0, 0, 1, 1);
+  const corner = probeCtx.getImageData(0, 0, 1, 1).data;
+  const chart = (corner[0] ?? 0) > 248 && (corner[1] ?? 0) > 248 && (corner[2] ?? 0) > 248;
+  if (!chart) return prepareSurface(source);
   const scratch = document.createElement("canvas");
-  scratch.width = image.width;
-  scratch.height = image.height;
+  scratch.width = width;
+  scratch.height = height;
   const scratchCtx = scratch.getContext("2d", { willReadFrequently: true });
   if (!scratchCtx) throw new Error("Sun surface unavailable");
   scratchCtx.drawImage(image, 0, 0);
-  const pixels = scratchCtx.getImageData(0, 0, scratch.width, scratch.height).data;
-  let minX = scratch.width;
-  let minY = scratch.height;
+
+  const pixels = scratchCtx.getImageData(0, 0, width, height).data;
+  let minX = width;
+  let minY = height;
   let maxX = 0;
   let maxY = 0;
-  for (let y = 0; y < scratch.height; y += 1) {
-    for (let x = 0; x < scratch.width; x += 1) {
-      const i = (y * scratch.width + x) * 4;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
       const r = pixels[i] ?? 0;
       const g = pixels[i + 1] ?? 0;
       const b = pixels[i + 2] ?? 0;
@@ -89,25 +105,24 @@ function fullSurfaceTexture(source: Texture): CanvasTexture {
   if (maxX - minX < 32 || maxY - minY < 32) throw new Error("Sun surface unavailable");
 
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = maxX - minX + 1;
+  canvas.height = maxY - minY + 1;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Sun surface unavailable");
-  ctx.drawImage(
-    scratch,
-    minX,
-    minY,
-    maxX - minX + 1,
-    maxY - minY + 1,
-    0,
-    0,
-    canvas.width,
-    canvas.height,
-  );
-  const map = new CanvasTexture(canvas);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(scratch, minX, minY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+  return prepareSurface(new CanvasTexture(canvas));
+}
+
+function prepareSurface(map: Texture): Texture {
   map.colorSpace = LinearSRGBColorSpace;
   map.wrapS = RepeatWrapping;
-  map.anisotropy = 8;
+  map.wrapT = ClampToEdgeWrapping;
+  map.generateMipmaps = true;
+  map.minFilter = LinearMipmapLinearFilter;
+  map.magFilter = LinearFilter;
+  map.anisotropy = 16;
   map.needsUpdate = true;
   return map;
 }
@@ -117,7 +132,7 @@ export function SunGlobe({ scale, reducedMotion }: SunGlobeProps) {
     <Canvas
       aria-label="A three-dimensional model of the Sun"
       camera={{ position: [0, 0.15, 3.5], fov: 35, near: 0.01, far: 50 }}
-      dpr={[1, 1.75]}
+      dpr={[1, 2]}
       gl={{ antialias: true, alpha: false }}
       style={{ position: "absolute", inset: 0 }}
     >
@@ -134,8 +149,14 @@ export function SunGlobe({ scale, reducedMotion }: SunGlobeProps) {
 
 function SunPhoto({ reducedMotion }: { reducedMotion: boolean }) {
   const mesh = useRef<Mesh>(null);
+  const maxAnisotropy = useThree((state) => state.gl.capabilities.getMaxAnisotropy());
   const texture = useLoader(TextureLoader, "/api/sun/surface");
-  const surface = useMemo(() => fullSurfaceTexture(texture), [texture]);
+  const surface = useMemo(() => {
+    const map = fullSurfaceTexture(texture);
+    map.anisotropy = maxAnisotropy;
+    map.needsUpdate = true;
+    return map;
+  }, [texture, maxAnisotropy]);
 
   useFrame((_, delta) => {
     if (!mesh.current || reducedMotion) return;
@@ -144,7 +165,7 @@ function SunPhoto({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <mesh ref={mesh} renderOrder={1}>
-      <sphereGeometry args={[1, 128, 96]} />
+      <sphereGeometry args={[1, 256, 192]} />
       <shaderMaterial
         toneMapped={false}
         uniforms={{ photo: { value: surface } }}

@@ -16,10 +16,19 @@ export function carringtonRotations(html: string): string[] {
   return ids;
 }
 
-/** Fixed NASA path for one published full-surface map. */
+/** Fixed NASA path for one published full-surface preview. */
 export function carringtonMapUrl(rotation: string): string {
+  return `${HOST}/${SERIES}/${rotationId(rotation)}.png`;
+}
+
+/** Fixed NASA path for the full-resolution science map of one solar turn. */
+export function carringtonFitsUrl(rotation: string): string {
+  return `${HOST}/${SERIES}/${rotationId(rotation)}.fits`;
+}
+
+function rotationId(rotation: string): string {
   if (!/^CR\d{4}$/.test(rotation)) {
     throw new Error("That is not a Carrington map id.");
   }
-  return `${HOST}/${SERIES}/${rotation}.png`;
+  return rotation;
 }
